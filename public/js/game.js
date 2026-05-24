@@ -57,7 +57,7 @@ class MarbleScene extends Phaser.Scene {
     this._pathDef    = PATHS[data.level]        || PATHS[1];
     this._tilt       = {};
     this._state      = {};
-    this._paused     = false;
+    this._paused     = !!data.startPaused;
     this._ended      = false;
     this._roundStart = 0;
   }
@@ -83,7 +83,7 @@ class MarbleScene extends Phaser.Scene {
     const g = this.add.graphics();
 
     // Filled rectangle per path segment (the walkable corridor)
-    g.fillStyle(0x0d1a2e, 1.0);
+    g.fillStyle(0xf5f2ed, 0.06);
     for (let i = 0; i < pts.length - 1; i++) {
       const ax = pts[i].x,   ay = pts[i].y;
       const bx = pts[i+1].x, by = pts[i+1].y;
@@ -108,13 +108,13 @@ class MarbleScene extends Phaser.Scene {
       const len = Math.hypot(dx, dy);
       if (len === 0) continue;
       const nx = -dy/len * hw, ny = dx/len * hw;
-      g.lineStyle(2, 0x2266cc, 0.9);
+      g.lineStyle(2, 0xc0392b, 0.85);
       g.beginPath(); g.moveTo(ax+nx, ay+ny); g.lineTo(bx+nx, by+ny); g.strokePath();
       g.beginPath(); g.moveTo(ax-nx, ay-ny); g.lineTo(bx-nx, by-ny); g.strokePath();
     }
 
     // Center guide line (subtle)
-    g.lineStyle(1, 0x334466, 0.4);
+    g.lineStyle(1, 0xf5f2ed, 0.12);
     g.beginPath();
     pts.forEach((p, i) => i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y));
     g.strokePath();
@@ -123,47 +123,32 @@ class MarbleScene extends Phaser.Scene {
     const cpG = this.add.graphics();
     pts.forEach((p, i) => {
       if (i === 0) {
-        cpG.lineStyle(3, 0x00ff88, 1.0);
-        cpG.strokeCircle(p.x, p.y, 22);
-        this.add.text(p.x, p.y, 'START', {
-          fontSize: '10px', fontFamily: 'Courier New', color: '#00ff88',
-        }).setOrigin(0.5, 0.5).setDepth(5);
+        cpG.lineStyle(2, 0xf5f2ed, 0.6);
+        cpG.strokeCircle(p.x, p.y, 20);
       } else if (i === pts.length - 1) {
-        cpG.lineStyle(3, 0xffd700, 1.0);
-        cpG.strokeCircle(p.x, p.y, 22);
-        this.add.text(p.x, p.y, 'END', {
-          fontSize: '10px', fontFamily: 'Courier New', color: '#ffd700',
-        }).setOrigin(0.5, 0.5).setDepth(5);
+        cpG.lineStyle(2, 0xf5f2ed, 0.4);
+        cpG.strokeCircle(p.x, p.y, 20);
       } else {
-        cpG.lineStyle(2, 0x445566, 0.8);
-        cpG.strokeCircle(p.x, p.y, 12);
-        this.add.text(p.x, p.y, String(i), {
-          fontSize: '9px', fontFamily: 'Courier New', color: '#445566',
-        }).setOrigin(0.5, 0.5).setDepth(5);
+        cpG.lineStyle(1.5, 0xf5f2ed, 0.3);
+        cpG.strokeCircle(p.x, p.y, 10);
       }
     });
 
     // ── Player ball ────────────────────────────────────────────────────────────
     this._players.forEach((p) => {
-      const start    = pts[0];
-      const hexColor = Phaser.Display.Color.HexStringToColor(p.color).color;
+      const start = pts[0];
 
       const ball = this.add.graphics();
-      ball.fillStyle(hexColor, 1);
+      ball.fillStyle(0xf5f2ed, 1.0);
       ball.fillCircle(0, 0, BALL_R);
-      ball.lineStyle(2.5, 0xffffff, 0.45);
+      ball.lineStyle(2.5, 0xc0392b, 0.8);
       ball.strokeCircle(0, 0, BALL_R);
       ball.setDepth(10);
       ball.x = start.x;
       ball.y = start.y;
 
-      const nameLabel = this.add.text(0, 0, (p.name || `P${p.playerNum}`).slice(0, 10), {
-        fontSize: '10px', fontFamily: 'Courier New',
-        color: p.color, stroke: '#000000', strokeThickness: 2,
-      }).setDepth(12).setOrigin(0.5, 0);
-
       this._state[p.playerNum] = {
-        ball, nameLabel,
+        ball,
         vx: 0, vy: 0,
         falls:         0,
         checkpointIdx: 0,
@@ -173,18 +158,10 @@ class MarbleScene extends Phaser.Scene {
       };
     });
 
-    // ── HUD ────────────────────────────────────────────────────────────────────
+    // ── HUD — timer only; falls/checkpoints shown in HTML sidebar ───────────────
     this._timerText = this.add.text(W / 2, ARENA_M / 2, '1:30', {
-      fontSize: '18px', fontFamily: 'Courier New', color: '#aaaaaa',
+      fontSize: '18px', fontFamily: 'Barlow', color: '#f5f2ed', alpha: 0.7,
     }).setOrigin(0.5, 0.5).setDepth(20);
-
-    this._fallsText = this.add.text(W - ARENA_M, ARENA_M / 2, 'Falls: 0', {
-      fontSize: '14px', fontFamily: 'Courier New', color: '#ff6644',
-    }).setOrigin(1, 0.5).setDepth(20);
-
-    this._cpText = this.add.text(ARENA_M, ARENA_M / 2, `0 / ${pts.length - 1}`, {
-      fontSize: '14px', fontFamily: 'Courier New', color: '#00ff88',
-    }).setOrigin(0, 0.5).setDepth(20);
 
     this.game.events.emit('ready');
   }
@@ -261,15 +238,6 @@ class MarbleScene extends Phaser.Scene {
       }
       if (newLevel > 0) s.proxMs[newLevel] += delta;
 
-      // ── HUD labels ──────────────────────────────────────────────────────────
-      s.nameLabel.x = s.ball.x;
-      s.nameLabel.y = s.ball.y + BALL_R + 3;
-
-      // Update HUD counters for the (only) player
-      if (p === this._players[0]) {
-        this._fallsText.setText(`Falls: ${s.falls}`);
-        this._cpText.setText(`${s.checkpointIdx} / ${pts.length - 1}`);
-      }
     }
   }
 
@@ -347,12 +315,13 @@ class MarbleScene extends Phaser.Scene {
 
 // ─── Factory (called by display.js) ──────────────────────────────────────────
 function createPhaserGame(containerId, initData) {
+  const el = document.getElementById(containerId);
   const config = {
     type:            Phaser.AUTO,
     parent:          containerId,
-    width:           window.innerWidth,
-    height:          window.innerHeight,
-    backgroundColor: '#0a0a0f',
+    width:           el ? el.offsetWidth  : window.innerWidth,
+    height:          el ? el.offsetHeight : window.innerHeight,
+    backgroundColor: '#111111',
     scene:           MarbleScene,
   };
   const game = new Phaser.Game(config);
