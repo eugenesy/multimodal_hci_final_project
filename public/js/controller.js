@@ -1,184 +1,55 @@
 'use strict';
 
-const PING_INTERVAL_MS = 5000;
-const DEBUG = new URLSearchParams(window.location.search).get('debug') === 'true';
-
-// Persistent player identity — UUID survives page reloads for modality counterbalancing
-function getOrCreatePlayerId() {
-  let id = localStorage.getItem('bsh_player_id');
-  if (!id) {
-    id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-      const r = Math.random() * 16 | 0;
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-    localStorage.setItem('bsh_player_id', id);
-  }
-  return id;
-}
-
-const PLAYER_NUM = 1; // server assigns the real number after connect
-
-const statusIcon  = document.getElementById('status-icon');
-const statusLabel = document.getElementById('status-label');
-const statusSub   = document.getElementById('status-sub');
-const errorMsg    = document.getElementById('error-msg');
-const permOverlay = document.getElementById('permission-overlay');
-const permBtn     = document.getElementById('permission-btn');
-const debugPanel  = document.getElementById('debug-panel');
-const debugGamma  = document.getElementById('debug-gamma');
-const debugBeta   = document.getElementById('debug-beta');
-const debugState  = document.getElementById('debug-state');
-const surveyOverlay  = document.getElementById('survey-overlay');
-const surveyForm     = document.getElementById('survey-form');
-const surveyThanks   = document.getElementById('survey-thanks');
-const surveyTextarea = document.getElementById('survey-textarea');
-const surveySubmit   = document.getElementById('survey-submit');
-const surveySkip     = document.getElementById('survey-skip');
-
-if (statusSub) statusSub.textContent = `Body Schema Hack · Player ${PLAYER_NUM}`;
-if (DEBUG) debugPanel.style.display = 'block';
-
-const PLAYER_COLOR = PLAYER_NUM === 1 ? '#00cfff' : '#ff6b35';
-if (statusLabel) statusLabel.style.color = PLAYER_COLOR;
-
-const STATE = {
-  CONNECTING: 'CONNECTING',
-  CONNECTED:  'CONNECTED',
-  PLAYING:    'PLAYING',
-  ERROR:      'ERROR',
-};
-
-let currentState = STATE.CONNECTING;
+// ─── Globals (referenced by debug panel in HTML) ──────────────────────────────
 let currentGamma = 0;
 let currentBeta  = 0;
-let calibrateGamma = 0;   // tapped-to-recalibrate offsets
-let calibrateBeta  = 0;
-let gyroReady    = false;
-let gyronormInstance = null;
-let rafHandle    = null;
-let assignedModality  = null;
-let assignedPlayerNum = PLAYER_NUM;
-let assignedPlayCount = 0;    // 0 = first ever session → show demographics
 
-function setState(state) {
-  currentState = state;
-  switch (state) {
-    case STATE.CONNECTING:
-      statusIcon.textContent  = '○';
-      statusLabel.textContent = 'Connecting…';
-      break;
-    case STATE.CONNECTED:
-      statusIcon.textContent  = `P${PLAYER_NUM}`;
-      statusLabel.textContent = `Player ${PLAYER_NUM} Ready`;
-      break;
-    case STATE.PLAYING:
-      statusIcon.textContent  = '▶';
-      statusLabel.textContent = 'Playing';
-      break;
-    case STATE.ERROR:
-      statusIcon.textContent  = '✕';
-      statusLabel.textContent = 'Error';
-      break;
-  }
-  if (DEBUG && debugState) debugState.textContent = `state: ${state.toLowerCase()}`;
+// ─── State ────────────────────────────────────────────────────────────────────
+let socket         = null;
+let gyroStarted    = false;
+let calibGamma     = 0;
+let calibBeta      = 0;
+let _playerNum     = null;
+let _modality      = '';
+let _playCount     = 0;
+let _demographics  = {};   // collected at join; included in survey payload
+
+const MODALITY_DESC = {
+  haptic: 'Your phone will vibrate — pulses grow stronger as the ball nears the path edge.',
+  audio:  'Your phone will beep — tones grow faster as the ball nears the path edge.',
+  none:   'No proximity feedback — keep the ball on the path using only vision.',
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+const DEBUG     = urlParams.get('debug') === 'true';
+
+// ─── Screen management ────────────────────────────────────────────────────────
+function _setState(name) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(`screen-${name}`);
+  if (el) el.classList.add('active');
+  const dbg = document.getElementById('debug-state');
+  if (dbg) dbg.textContent = name;
 }
 
-function showError(msg) {
-  if (errorMsg) { errorMsg.style.display = 'block'; errorMsg.textContent = msg; }
-  setState(STATE.ERROR);
+// ─── Chip selectors ───────────────────────────────────────────────────────────
+function _initChips(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.addEventListener('click', e => {
+    const chip = e.target.closest('.bh-chip');
+    if (!chip) return;
+    container.querySelectorAll('.bh-chip').forEach(c => c.classList.remove('sel'));
+    chip.classList.add('sel');
+  });
 }
 
-// ─── Proximity feedback: haptic vibration ─────────────────────────────────────
-let hapticTimer = null;
-
-function setHapticLevel(level) {
-  clearInterval(hapticTimer);
-  hapticTimer = null;
-  if (!navigator.vibrate) return;
-
-  if (level === 0) { navigator.vibrate(0); return; }
-  if (level === 4) { navigator.vibrate([200]); return; }
-
-  // Levels 1–3: repeating pulse, faster and stronger as level increases
-  const configs = [
-    null,
-    { pattern: [15], period: 500 },   // 1: NEAR  — light tick every 500ms
-    { pattern: [35], period: 250 },   // 2: WARN  — medium pulse every 250ms
-    { pattern: [70], period: 110 },   // 3: DANGER — heavy pulse every 110ms
-  ];
-  const cfg = configs[level];
-  const fire = () => navigator.vibrate(cfg.pattern);
-  fire();
-  hapticTimer = setInterval(fire, cfg.period);
+function _chipVal(containerId) {
+  const sel = document.querySelector(`#${containerId} .bh-chip.sel`);
+  return sel ? sel.dataset.val : '';
 }
 
-// ─── Proximity feedback: audio oscillator ─────────────────────────────────────
-let audioCtx  = null;
-let osc       = null;
-let gainNode  = null;
-let beepTimer = null;
-
-// Parking-sensor style: pulsed beeps that increase in rate and pitch with proximity
-const BEEP_FREQS   = [0,  220,  360,  540, 800];   // Hz per level
-const BEEP_GAINS   = [0, 0.25, 0.45, 0.70, 0.9];   // amplitude per level
-const BEEP_PERIODS = [0, 1000,  333,  125];          // ms between beep starts, levels 1–3
-
-function ensureAudio() {
-  if (!audioCtx) {
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      gainNode = audioCtx.createGain();
-      gainNode.gain.value = 0;
-      gainNode.connect(audioCtx.destination);
-      osc = audioCtx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = BEEP_FREQS[1];
-      osc.connect(gainNode);
-      osc.start();
-    } catch (e) { /* audio not available */ }
-  } else if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-}
-
-function setAudioLevel(level) {
-  clearInterval(beepTimer); beepTimer = null;
-  if (!audioCtx || !osc || !gainNode) return;
-  const l = Math.max(0, Math.min(4, level));
-  const t = audioCtx.currentTime;
-
-  if (l === 0) {
-    gainNode.gain.setTargetAtTime(0, t, 0.05);
-    return;
-  }
-
-  osc.frequency.setTargetAtTime(BEEP_FREQS[l], t, 0.02);
-
-  if (l === 4) {
-    // Continuous burst on hit
-    gainNode.gain.setTargetAtTime(BEEP_GAINS[4], t, 0.02);
-    return;
-  }
-
-  // Levels 1–3: pulsed beeps at increasing rate
-  const fire = () => {
-    if (!audioCtx || !gainNode) return;
-    const now = audioCtx.currentTime;
-    gainNode.gain.cancelScheduledValues(now);
-    gainNode.gain.setValueAtTime(BEEP_GAINS[l], now);
-    gainNode.gain.setTargetAtTime(0, now + 0.06, 0.02);
-  };
-  fire();
-  beepTimer = setInterval(fire, BEEP_PERIODS[l]);
-}
-
-function stopAllFeedback() {
-  setHapticLevel(0);
-  setAudioLevel(0);
-  clearInterval(beepTimer); beepTimer = null;
-}
-
-// ─── Device info from user-agent ─────────────────────────────────────────────
+// ─── Device parser ────────────────────────────────────────────────────────────
 function _parseDevice(ua) {
   const android = ua.match(/Android\s([\d.]+);\s([^)]+?)\sBuild/);
   if (android) return { os_version: android[1], device_model: android[2].trim() };
@@ -187,270 +58,269 @@ function _parseDevice(ua) {
   return { os_version: '', device_model: '' };
 }
 
-// ─── Join screen — collect name then connect ──────────────────────────────────
-const joinOverlay = document.getElementById('join-overlay');
-const joinNameEl  = document.getElementById('join-name');
-const joinBtn     = document.getElementById('join-btn');
+// ─── Join ─────────────────────────────────────────────────────────────────────
+function connectWithName() {
+  const name = (document.getElementById('join-name')?.value || '').trim();
+  if (!name) {
+    _showError('Please enter your name.');
+    return;
+  }
 
-// Pre-fill saved name if returning player
-const savedName = localStorage.getItem('bsh_player_name') || '';
-if (joinNameEl && savedName) joinNameEl.value = savedName;
+  _demographics = {
+    handedness:        _chipVal('chips-hand'),
+    gaming_experience: _chipVal('chips-gaming'),
+    tilt_experience:   _chipVal('chips-tilt'),
+    age:               document.getElementById('join-age')?.value || '',
+    gender:            _chipVal('chips-gender'),
+  };
 
-let socket = null;
-
-function connectWithName(name) {
-  name = name.trim().slice(0, 20) || 'Player';
-  localStorage.setItem('bsh_player_name', name);
-  if (joinOverlay) joinOverlay.style.display = 'none';
-
+  const playerId   = _getOrCreatePlayerId();
   const canVibrate = !!navigator.vibrate;
   const { os_version, device_model } = _parseDevice(navigator.userAgent);
+
   socket = io({
     query: {
-      role:        'controller',
-      playerName:  name,
-      playerId:    getOrCreatePlayerId(),
-      canVibrate:  String(canVibrate),
-      os:          navigator.platform || '',
+      role:              'controller',
+      playerName:        name,
+      playerId,
+      canVibrate:        String(canVibrate),
+      os:                navigator.platform || '',
       os_version,
       device_model,
-      browser:     navigator.userAgent.slice(0, 80),
-      screen_res:  `${screen.width}x${screen.height}`,
-      pixel_ratio: String(window.devicePixelRatio || 1),
+      browser:           navigator.userAgent.slice(0, 80),
+      screen_res:        `${screen.width}x${screen.height}`,
+      pixel_ratio:       String(window.devicePixelRatio || 1),
+      handedness:        _demographics.handedness,
+      gaming_experience: _demographics.gaming_experience,
+      tilt_experience:   _demographics.tilt_experience,
+      age:               _demographics.age,
+      gender:            _demographics.gender,
     },
   });
+
   _bindSocketEvents();
 }
 
-if (joinBtn) {
-  joinBtn.addEventListener('click', () => connectWithName(joinNameEl?.value || ''));
-}
-if (joinNameEl) {
-  joinNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') connectWithName(joinNameEl.value); });
-  // Focus the input on load
-  setTimeout(() => joinNameEl.focus(), 100);
+function _getOrCreatePlayerId() {
+  let id = localStorage.getItem('bsh_player_id');
+  if (!id) { id = `p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; localStorage.setItem('bsh_player_id', id); }
+  return id;
 }
 
-// ─── Socket.io event bindings (called after connect) ─────────────────────────
+// ─── Socket events ────────────────────────────────────────────────────────────
 function _bindSocketEvents() {
+  socket.on('connect', () => {
+    console.log('[Controller] Connected:', socket.id);
+    if (DEBUG) document.getElementById('debug-panel').style.display = 'block';
+  });
 
-socket.on('connect',       () => { setState(STATE.CONNECTED); startPingLoop(); initGyro(); });
-socket.on('disconnect',    () => { setState(STATE.CONNECTING); stopGyroStream(); stopAllFeedback(); });
-socket.on('connect_error', () => setState(STATE.CONNECTING));
+  socket.on('disconnect', () => {
+    console.log('[Controller] Disconnected');
+    _showError('Disconnected from server. Please refresh.');
+  });
 
-socket.on('CONTROLLER_REJECTED', ({ message }) => {
-  showError(message || 'Connection rejected. Please wait for the current round to end.');
-});
+  socket.on('CONTROLLER_REJECTED', ({ message } = {}) => {
+    _showError(message || 'Connection rejected.');
+    socket.disconnect();
+  });
 
-const MODALITY_BRIEFING = {
-  haptic: { icon: '📳', label: 'Haptic', desc: 'Your phone will vibrate — pulses grow faster and stronger as your ball gets closer to the path edge.' },
-  audio:  { icon: '🔊', label: 'Audio',  desc: 'You will hear a tone — it increases in pitch and rate as your ball approaches the path edge.' },
-  none:   { icon: '—',  label: 'None',   desc: 'No proximity warning. You will rely on visual information only.' },
-};
+  socket.on('PLAYER_ASSIGNED', ({ playerNum, color, modality, playCount } = {}) => {
+    _playerNum = playerNum;
+    _modality  = modality;
+    _playCount = playCount || 0;
 
-socket.on('PLAYER_ASSIGNED', ({ playerNum, color, modality, playCount }) => {
-  assignedPlayerNum = playerNum;
-  assignedModality  = modality;
-  assignedPlayCount = playCount || 0;
-  if (statusLabel) { statusLabel.textContent = `Player ${playerNum} Ready`; statusLabel.style.color = color; }
-  if (statusSub)   statusSub.textContent = `Body Schema Hack · Player ${playerNum}`;
-  const bubble    = document.getElementById('tilt-bubble');
-  const rationale = document.getElementById('tilt-rationale');
-  if (bubble) bubble.style.color = color;
-  if (rationale) {
-    const b = MODALITY_BRIEFING[modality] || MODALITY_BRIEFING.none;
-    rationale.innerHTML =
-      `<div style="font-size:13px;color:#aaa;margin-bottom:8px;letter-spacing:2px">` +
-        `${b.icon}&nbsp; THIS SESSION: <strong style="color:#e0e0e0">${b.label}</strong>` +
-      `</div>` +
-      `<div style="color:#888;font-size:11px;line-height:1.7">${b.desc}</div>` +
-      `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #1a1a2a;` +
-           `color:#00ff88;font-size:11px;line-height:1.8;font-weight:bold">` +
-        `Use your non-dominant hand only.` +
-      `</div>` +
-      `<div style="color:#666;font-size:10px;line-height:1.7;margin-top:4px">` +
-        `Hold and tilt this phone with your weaker hand.<br>` +
-        `Your dominant hand should rest at your side.<br>` +
-        `Double-tap screen to recalibrate tilt neutral.` +
-      `</div>`;
-    rationale.style.display = 'block';
-  }
-});
+    const sessionTag = `P${playerNum} · ${modality.toUpperCase()}`;
+    const badgeText  = modality.toUpperCase();
+    const monoDesc   = MODALITY_DESC[modality] || '';
 
-socket.on('GAME_START', () => {
-  _hideSurvey();
-  calibrateGamma = 0;
-  calibrateBeta  = 0;
-  setState(STATE.PLAYING);
-  ensureAudio();
-  startGyroStream();
-  const rationale = document.getElementById('tilt-rationale');
-  if (rationale) rationale.style.display = 'none';
-});
-
-socket.on('GAME_END', () => {
-  stopGyroStream();
-  stopAllFeedback();
-  setState(STATE.CONNECTED);
-  _showSurvey();
-});
-
-// ─── Proximity feedback events ────────────────────────────────────────────────
-socket.on('HAPTIC_PROXIMITY',  ({ level }) => setHapticLevel(level));
-socket.on('AUDIO_PROXIMITY',   ({ level }) => setAudioLevel(level));
-} // end _bindSocketEvents
-
-// ─── Gyroscope ─────────────────────────────────────────────────────────────────
-async function initGyro() {
-  if (!window.DeviceOrientationEvent) {
-    showError('Motion sensors not available on this device.');
-    return;
-  }
-  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-    permOverlay.classList.add('visible');
-    permBtn.addEventListener('click', async () => {
-      try {
-        const perm = await DeviceOrientationEvent.requestPermission();
-        permOverlay.classList.remove('visible');
-        ensureAudio();
-        if (perm === 'granted') startGyronorm();
-        else showError('Tilt permission denied. Reload and tap Allow.');
-      } catch (err) {
-        permOverlay.classList.remove('visible');
-        showError('Permission error: ' + err.message);
-      }
+    ['ready', 'playing', 'calib'].forEach(prefix => {
+      const st = document.getElementById(`${prefix}-session-tag`);
+      if (st) st.textContent = sessionTag;
     });
-    return;
-  }
-  startGyronorm();
+    const rb = document.getElementById('ready-badge');
+    const rh = document.getElementById('ready-headline');
+    const rd = document.getElementById('ready-modality-desc');
+    const pb = document.getElementById('playing-badge');
+    if (rb) rb.textContent = badgeText;
+    if (rh) rh.innerHTML  = `Player ${playerNum}<br>Ready`;
+    if (rd) rd.textContent = monoDesc;
+    if (pb) pb.textContent = badgeText;
+
+    _requestGyroPermission();
+  });
+
+  socket.on('GAME_START', ({ level } = {}) => {
+    const lvl = Math.min(3, Math.max(1, Number(level) || 1));
+    const names = ['LEVEL<br>ONE', 'LEVEL<br>TWO', 'LEVEL<br>THREE'];
+    const ph = document.getElementById('playing-headline');
+    if (ph) ph.innerHTML = names[lvl - 1];
+    _setState('calibration');
+  });
+
+  socket.on('GAME_END', () => {
+    stopAllFeedback();
+    _setState('survey');
+  });
+
+  // Proximity feedback
+  socket.on('HAPTIC_PROXIMITY', ({ level } = {}) => {
+    if (!navigator.vibrate) return;
+    const patterns = { 0: [], 1: [30], 2: [30, 80, 30], 3: [40, 50, 40, 50, 40] };
+    const p = patterns[level] || [];
+    if (p.length) navigator.vibrate(p);
+  });
+
+  socket.on('AUDIO_PROXIMITY', ({ level } = {}) => {
+    _playTone(level);
+  });
+
+  socket.on('PING', () => socket.emit('PONG', {}));
 }
 
-function startGyronorm() {
-  gyronormInstance = new GyroNorm();
-  gyronormInstance.init({ frequency: 60, gravityNormalized: true, orientationBase: GyroNorm.WORLD })
-    .then(() => {
-      gyroReady = true;
-      gyronormInstance.start((data) => {
-        currentGamma = data.do.gamma;
-        currentBeta  = data.do.beta;
-        if (DEBUG) {
-          if (debugGamma) debugGamma.textContent = currentGamma.toFixed(1) + '°';
-          if (debugBeta)  debugBeta.textContent  = currentBeta.toFixed(1) + '°';
-        }
-      });
-    })
-    .catch(() => {
-      window.addEventListener('deviceorientation', (e) => {
-        if (e.gamma !== null) currentGamma = e.gamma;
-        if (e.beta  !== null) currentBeta  = e.beta;
-        if (DEBUG) {
-          if (debugGamma) debugGamma.textContent = currentGamma.toFixed(1) + '°';
-          if (debugBeta)  debugBeta.textContent  = currentBeta.toFixed(1) + '°';
-        }
-      });
-      gyroReady = true;
-    });
+// ─── Calibration ──────────────────────────────────────────────────────────────
+document.getElementById('calibrate-btn')?.addEventListener('click', () => {
+  calibGamma = currentGamma;
+  calibBeta  = currentBeta;
+  socket?.emit('CALIBRATION_DONE', {});
+  startGyroStream();
+  _setState('playing');
+});
+
+// ─── Gyro ─────────────────────────────────────────────────────────────────────
+function _requestGyroPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    _setState('permission');
+    document.getElementById('permission-btn')?.addEventListener('click', () => {
+      DeviceOrientationEvent.requestPermission().then(state => {
+        if (state === 'granted') { _setState('ready'); }
+        else { _showError('Motion permission denied. Please allow tilt access in browser settings.'); }
+      }).catch(() => _showError('Failed to request motion permission.'));
+    }, { once: true });
+  } else {
+    _setState('ready');
+  }
 }
 
 function startGyroStream() {
-  if (rafHandle) return;
-  let lastSendTime = 0;
-  const send = (now) => {
-    if (gyroReady && now - lastSendTime >= 16) {
-      socket.volatile.emit('GYRO_DATA', {
-        gamma: currentGamma - calibrateGamma,
-        beta:  currentBeta  - calibrateBeta,
-      });
-      lastSendTime = now;
-    }
-    rafHandle = requestAnimationFrame(send);
-  };
-  rafHandle = requestAnimationFrame(send);
+  if (gyroStarted) return;
+  gyroStarted = true;
+  let gn;
+  try {
+    gn = new GyroNorm();
+    gn.init({ frequency: 60, gravityNormalized: true, orientationBase: GyroNorm.GAME, decimalCount: 2 })
+      .then(() => {
+        gn.start(data => {
+          const raw_g = data.do.gamma ?? 0;
+          const raw_b = data.do.beta  ?? 0;
+          currentGamma = raw_g - calibGamma;
+          currentBeta  = raw_b - calibBeta;
+          _sendTilt(currentGamma, currentBeta);
+        });
+      })
+      .catch(() => _fallbackGyro());
+  } catch (_) {
+    _fallbackGyro();
+  }
 }
 
-function stopGyroStream() {
-  if (rafHandle) { cancelAnimationFrame(rafHandle); rafHandle = null; }
+function _fallbackGyro() {
+  window.addEventListener('deviceorientation', e => {
+    currentGamma = (e.gamma ?? 0) - calibGamma;
+    currentBeta  = (e.beta  ?? 0) - calibBeta;
+    _sendTilt(currentGamma, currentBeta);
+  });
 }
 
-function startPingLoop() {
-  setInterval(() => { if (socket.connected) socket.emit('PING', {}); }, PING_INTERVAL_MS);
-}
-
-// ─── Tap-to-recalibrate ───────────────────────────────────────────────────────
-// Double-tap anywhere during play zeros the current tilt as the new neutral
-let lastTap = 0;
-document.addEventListener('touchend', (e) => {
-  if (currentState !== STATE.PLAYING) return;
-  // Ignore taps inside the survey overlay
-  if (surveyOverlay && surveyOverlay.contains(e.target)) return;
+let _lastSent = 0;
+function _sendTilt(gamma, beta) {
   const now = Date.now();
-  if (now - lastTap < 300) {
-    calibrateGamma = currentGamma;
-    calibrateBeta  = currentBeta;
+  if (now - _lastSent < 16) return;
+  _lastSent = now;
+  if (DEBUG) {
+    const dg = document.getElementById('debug-gamma');
+    const db = document.getElementById('debug-beta');
+    if (dg) dg.textContent = gamma.toFixed(1) + '°';
+    if (db) db.textContent = beta.toFixed(1)  + '°';
   }
-  lastTap = now;
-}, { passive: true });
-
-// ─── Post-round survey ────────────────────────────────────────────────────────
-function _showSurvey() {
-  if (!surveyOverlay) return;
-  surveyForm.style.display       = 'flex';
-  surveyForm.style.flexDirection = 'column';
-  surveyThanks.style.display     = 'none';
-  surveyTextarea.value           = '';
-
-  // Show demographics only on the participant's very first session
-  const demoSection = document.getElementById('demographics-section');
-  if (demoSection) {
-    demoSection.style.display = assignedPlayCount === 0 ? 'block' : 'none';
-    // Clear previous answers
-    document.querySelectorAll('#demographics-section input').forEach(el => { el.checked = false; el.value = el.type === 'number' ? '' : el.value; });
-    const ageEl = document.getElementById('demo-age');
-    if (ageEl) ageEl.value = '';
-  }
-
-  surveyOverlay.classList.add('visible');
+  socket?.emit('GYRO_DATA', { gamma, beta });
 }
 
-function _hideSurvey() {
-  if (!surveyOverlay) return;
-  surveyOverlay.classList.remove('visible');
+// ─── Double-tap recalibration ─────────────────────────────────────────────────
+document.addEventListener('dblclick', () => {
+  calibGamma = currentGamma + calibGamma;
+  calibBeta  = currentBeta  + calibBeta;
+});
+
+// ─── Audio tones ──────────────────────────────────────────────────────────────
+let _audioCtx = null;
+function _playTone(level) {
+  if (level === 0) return;
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = { 1: 330, 2: 440, 3: 660 };
+    const durs  = { 1: 0.08, 2: 0.12, 3: 0.18 };
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.connect(gain); gain.connect(_audioCtx.destination);
+    osc.frequency.value = freqs[level] || 440;
+    gain.gain.setValueAtTime(0.25, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + (durs[level] || 0.1));
+    osc.start(); osc.stop(_audioCtx.currentTime + (durs[level] || 0.1));
+  } catch (_) {}
 }
 
-function _collectDemographics() {
-  const radio = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : null; };
-  const ageEl = document.getElementById('demo-age');
-  return {
-    age:              ageEl && ageEl.value ? Number(ageEl.value) : null,
-    gender:           radio('demo-gender'),
-    handedness:       radio('demo-hand'),
-    gaming_experience: radio('demo-gaming'),
-    tilt_experience:  radio('demo-tilt'),
-  };
+// ─── Feedback stop ────────────────────────────────────────────────────────────
+function stopAllFeedback() {
+  if (navigator.vibrate) navigator.vibrate(0);
 }
 
-function _submitSurvey() {
-  const payload = {
-    response:   surveyTextarea.value.trim(),
-    playerNum:  assignedPlayerNum,
-    modality:   assignedModality,
-    play_count: assignedPlayCount,
-    timestamp:  new Date().toISOString(),
-  };
-  if (assignedPlayCount === 0) payload.demographics = _collectDemographics();
-  socket.emit('SURVEY_RESPONSE', payload);
-  surveyForm.style.display   = 'none';
-  surveyThanks.style.display = 'flex';
-  setTimeout(_hideSurvey, 2000);
+// ─── Survey ───────────────────────────────────────────────────────────────────
+document.getElementById('survey-submit')?.addEventListener('click', () => {
+  const text = document.getElementById('survey-textarea')?.value.trim() || '';
+  socket?.emit('SURVEY_RESPONSE', {
+    response:     text,
+    playerNum:    _playerNum,
+    modality:     _modality,
+    timestamp:    new Date().toISOString(),
+    play_count:   _playCount,
+    demographics: _demographics,
+  });
+  _setState('thanks');
+});
+
+document.getElementById('survey-skip')?.addEventListener('click', () => {
+  socket?.emit('SURVEY_RESPONSE', {
+    response:     '',
+    playerNum:    _playerNum,
+    modality:     _modality,
+    timestamp:    new Date().toISOString(),
+    play_count:   _playCount,
+    demographics: _demographics,
+  });
+  _setState('thanks');
+});
+
+// ─── Error toast ──────────────────────────────────────────────────────────────
+function _showError(msg) {
+  const el = document.getElementById('error-msg');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
-if (surveySubmit) surveySubmit.addEventListener('click', _submitSurvey);
-if (surveySkip)   surveySkip.addEventListener('click',   _hideSurvey);
+// ─── Join button ──────────────────────────────────────────────────────────────
+document.getElementById('join-btn')?.addEventListener('click', connectWithName);
+document.getElementById('join-name')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') connectWithName();
+});
 
-// ─── AudioContext unlock on first touch ──────────────────────────────────────
-document.body.addEventListener('touchstart', ensureAudio, { once: true });
+// ─── Chip init ────────────────────────────────────────────────────────────────
+_initChips('chips-hand');
+_initChips('chips-gaming');
+_initChips('chips-tilt');
+_initChips('chips-gender');
 
-// Keep screen awake during gameplay
-if ('wakeLock' in navigator) {
-  navigator.wakeLock.request('screen').catch(() => {});
-}
+console.log('[Controller] Ready');
