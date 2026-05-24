@@ -57,7 +57,6 @@ socket.on('GYRO_DATA', ({ gamma, beta, player }) => {
 socket.on('GAME_START', ({ level } = {}) => {
   currentRound++;
   currentLevel = Math.min(3, Math.max(1, Number(level) || 1));
-  _transitionTo(STATE.CALIBRATING);
   _destroyPhaser();
 
   // Update level banner
@@ -67,33 +66,38 @@ socket.on('GAME_START', ({ level } = {}) => {
   if (lbLevel) lbLevel.textContent = meta.label;
   if (lbDesc)  lbDesc.textContent  = meta.desc;
 
-  // Build Phaser with game paused, waiting for CALIBRATION_DONE
+  // Update topbar
   const p = players[0];
-  const playerList = players.map(pl => ({ playerNum: pl.playerNum, color: pl.color, name: pl.playerName }));
-
-  phaserGame = window.createPhaserGame('phaser-wrap', {
-    players:           playerList,
-    level:             currentLevel,
-    startPaused:       true,
-    onWallHit:         _onWallHit,
-    onGameEnd:         _onGameEnd,
-    onProximityChange: _onProximityChange,
-  });
-
-  phaserGame.events.once('ready', () => {
-    activeMazeScene = phaserGame.scene.getScene('MazeScene');
-  });
-
-  // Update topbar for active session
   const statusTag  = document.getElementById('display-status-tag');
   const phaseBadge = document.getElementById('display-phase-badge');
   if (statusTag)  statusTag.textContent  = p ? `${p.playerName} · ${(p.modality || '').toUpperCase()}` : '';
   if (phaseBadge) { phaseBadge.textContent = 'GAME'; phaseBadge.style.background = 'var(--red)'; phaseBadge.style.color = '#fff'; }
+
+  // Show game view NOW so phaser-wrap has real layout dimensions
+  _transitionTo(STATE.ROUND_ACTIVE);
+  _showCalibOverlay(true);
+
+  // Build Phaser after one animation frame so the browser computes layout
+  const playerList = players.map(pl => ({ playerNum: pl.playerNum, color: pl.color, name: pl.playerName }));
+  requestAnimationFrame(() => {
+    phaserGame = window.createPhaserGame('phaser-wrap', {
+      players:           playerList,
+      level:             currentLevel,
+      startPaused:       true,
+      onWallHit:         _onWallHit,
+      onGameEnd:         _onGameEnd,
+      onProximityChange: _onProximityChange,
+    });
+
+    phaserGame.events.once('ready', () => {
+      activeMazeScene = phaserGame.scene.getScene('MazeScene');
+    });
+  });
 });
 
 socket.on('CALIBRATION_DONE', () => {
+  _showCalibOverlay(false);
   if (activeMazeScene) activeMazeScene.setPaused(false);
-  _transitionTo(STATE.ROUND_ACTIVE);
 });
 
 // ─── State helpers ────────────────────────────────────────────────────────────
@@ -107,18 +111,21 @@ function _transitionTo(state) {
   const banner = document.getElementById('level-banner');
   if (banner) banner.classList.remove('active');
 
-  if (state === STATE.WAITING || state === STATE.CALIBRATING) {
+  if (state === STATE.WAITING) {
     document.getElementById('view-waiting')?.classList.add('active');
-    clearInterval(sbInterval); sbInterval = null;
   } else if (state === STATE.ROUND_ACTIVE) {
     document.getElementById('view-game')?.classList.add('active');
     if (banner) banner.classList.add('active');
-    // Poll sidebar every 500ms
-    sbInterval = setInterval(_updateSidebar, 500);
   } else if (state === STATE.ROUND_RESULTS) {
     document.getElementById('view-results')?.classList.add('active');
-    clearInterval(sbInterval); sbInterval = null;
   }
+}
+
+function _showCalibOverlay(show) {
+  const el = document.getElementById('calib-overlay');
+  if (!el) return;
+  if (show) el.classList.add('active');
+  else el.classList.remove('active');
 }
 
 // ─── Waiting screen ───────────────────────────────────────────────────────────
@@ -146,21 +153,6 @@ function _renderWaiting() {
   if (dotLabel)    dotLabel.textContent    = `P${p.playerNum}`;
   if (playerName)  playerName.textContent  = p.playerName;
   if (playerMod)   playerMod.textContent   = `${ml[p.modality] || ''} · Session ${(p.playCount || 0) + 1}`;
-}
-
-// ─── Sidebar polling ──────────────────────────────────────────────────────────
-function _updateSidebar() {
-  if (!activeMazeScene) return;
-  const stats = activeMazeScene.getStats();
-  const p     = players[0];
-  if (!p) return;
-  const s = stats[p.playerNum];
-  if (!s) return;
-
-  const sbFalls = document.getElementById('sb-falls');
-  const sbCp    = document.getElementById('sb-checkpoints');
-  if (sbFalls) sbFalls.textContent = s.falls;
-  if (sbCp)    sbCp.textContent    = s.checkpoints;
 }
 
 // ─── Callbacks from game ──────────────────────────────────────────────────────
@@ -265,7 +257,6 @@ function _showNotification(msg, color) {
 
 // ─── Phaser lifecycle ─────────────────────────────────────────────────────────
 function _destroyPhaser() {
-  clearInterval(sbInterval); sbInterval = null;
   if (phaserGame) { phaserGame.destroy(true); phaserGame = null; }
   activeMazeScene = null;
 }
