@@ -20,7 +20,7 @@
 }
 .bh-eyebrow {
   font-family: 'Barlow', sans-serif;
-  font-size: 7px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -38,11 +38,11 @@
 }
 .bh-badge {
   font-family: 'Syne', sans-serif;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 3px 10px;
+  padding: 4px 12px;
   color: #fff;
 }
 .bh-badge-lobby { background: var(--rule);  color: var(--black); }
@@ -53,11 +53,11 @@
   background: var(--black);
   color: var(--cream);
   font-family: 'Syne', sans-serif;
-  font-size: 8.5px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding: 11px;
+  padding: 14px;
   text-align: center;
   border: none;
   cursor: pointer;
@@ -68,20 +68,20 @@
   background: transparent;
   color: var(--gray);
   font-family: 'Syne', sans-serif;
-  font-size: 7.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 9px;
+  padding: 12px;
   text-align: center;
   border: 1px solid var(--rule);
   cursor: pointer;
 }
 .bh-chip {
   border: 1px solid var(--rule);
-  padding: 4px 9px;
+  padding: 7px 14px;
   font-family: 'Barlow', sans-serif;
-  font-size: 8px;
+  font-size: 12px;
   color: var(--gray);
   cursor: pointer;
   background: transparent;
@@ -96,22 +96,22 @@
   width: 100%;
   border: 1.5px solid var(--black);
   background: transparent;
-  padding: 8px 10px;
+  padding: 11px 12px;
   font-family: 'Barlow', sans-serif;
-  font-size: 10px;
+  font-size: 15px;
   color: var(--black);
   outline: none;
 }
 .bh-input::placeholder { color: var(--rule); }
 .bh-field-label {
   font-family: 'Barlow', sans-serif;
-  font-size: 7px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--black);
   display: block;
-  margin-bottom: 4px;
-  margin-top: 10px;
+  margin-bottom: 5px;
+  margin-top: 14px;
 }
-.bh-chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.bh-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }

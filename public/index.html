@@ -30,7 +30,7 @@
       align-items: center;
       gap: 14px;
       font-family: 'Barlow', sans-serif;
-      font-size: 9px;
+      font-size: 13px;
       font-weight: 300;
       letter-spacing: 0.1em;
     }
@@ -67,7 +67,7 @@
     }
     #waiting-sub {
       font-family: 'Barlow', sans-serif;
-      font-size: 10px; font-weight: 300;
+      font-size: 14px; font-weight: 300;
       color: #bbb; letter-spacing: 0.12em;
       text-transform: uppercase;
       position: relative; z-index: 1;
@@ -88,11 +88,11 @@
     }
     #waiting-player-name {
       font-family: 'Barlow', sans-serif;
-      font-size: 12px; font-weight: 400; color: var(--black); letter-spacing: 0.06em;
+      font-size: 18px; font-weight: 400; color: var(--black); letter-spacing: 0.06em;
     }
     #waiting-player-mod {
       font-family: 'Barlow', sans-serif;
-      font-size: 9px; color: var(--gray); margin-top: -2px;
+      font-size: 14px; color: var(--gray); margin-top: -2px;
     }
 
     /* ── Level banner ── */
@@ -107,7 +107,7 @@
     #level-banner.active { display: flex; }
     .lb-txt {
       font-family: 'Syne', sans-serif;
-      font-size: 9px; font-weight: 700;
+      font-size: 14px; font-weight: 700;
       letter-spacing: 0.16em; color: #fff;
     }
     .lb-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.3); }
@@ -123,39 +123,41 @@
       overflow: hidden;
     }
     #game-sidebar {
-      width: 130px;
+      width: 160px;
       background: var(--cream);
       border-left: 1.5px solid var(--rule);
-      padding: 14px 12px;
+      padding: 18px 16px;
       display: flex;
       flex-direction: column;
       gap: 0;
     }
     .gs-title {
       font-family: 'Barlow', sans-serif;
-      font-size: 7px; font-weight: 600;
+      font-size: 11px; font-weight: 600;
       letter-spacing: 0.2em; text-transform: uppercase;
-      color: var(--red); margin-bottom: 10px;
+      color: var(--red); margin-bottom: 12px;
     }
     .gs-stat {
       border-top: 1px solid var(--rule);
-      padding: 10px 0;
+      padding: 14px 0;
     }
     .gs-val {
       font-family: 'Syne', sans-serif;
-      font-size: 26px; font-weight: 800;
+      font-size: 36px; font-weight: 800;
       color: var(--black); line-height: 1;
     }
     .gs-key {
       font-family: 'Barlow', sans-serif;
-      font-size: 7px; color: var(--gray);
+      font-size: 11px; color: var(--gray);
       letter-spacing: 0.1em; text-transform: uppercase;
-      margin-top: 2px;
+      margin-top: 4px;
     }
 
     /* ── Round results ── */
     #view-results {
       background: var(--cream);
+    }
+    #view-results.active {
       display: grid;
       grid-template-columns: 1fr 1fr;
       align-items: center;
@@ -164,7 +166,7 @@
     }
     #res-eyebrow {
       font-family: 'Barlow', sans-serif;
-      font-size: 9px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
       letter-spacing: 0.22em; text-transform: uppercase;
       color: var(--red); margin-bottom: 8px;
     }
@@ -182,7 +184,7 @@
     }
     #res-modality {
       font-family: 'Barlow', sans-serif;
-      font-size: 10px; font-weight: 300; color: var(--gray);
+      font-size: 15px; font-weight: 300; color: var(--gray);
     }
     #res-stats {
       display: grid;
@@ -199,25 +201,25 @@
     .res-stat-val.red { color: var(--red); }
     .res-stat-key {
       font-family: 'Barlow', sans-serif;
-      font-size: 8px; color: var(--gray);
-      letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
+      font-size: 13px; color: var(--gray);
+      letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px;
     }
     #res-next {
       grid-column: 1 / -1;
       background: var(--black);
-      padding: 11px 14px;
+      padding: 16px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     #res-next-txt {
       font-family: 'Syne', sans-serif;
-      font-size: 9px; font-weight: 700;
+      font-size: 14px; font-weight: 700;
       letter-spacing: 0.12em; color: var(--cream);
     }
     #res-countdown {
       font-family: 'Barlow', sans-serif;
-      font-size: 9px; font-weight: 300; color: var(--gray);
+      font-size: 13px; font-weight: 300; color: var(--gray);
     }
 
     /* ── Toast ── */

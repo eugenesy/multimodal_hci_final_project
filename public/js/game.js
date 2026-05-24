@@ -83,7 +83,7 @@ class MarbleScene extends Phaser.Scene {
     const g = this.add.graphics();
 
     // Filled rectangle per path segment (the walkable corridor)
-    g.fillStyle(0xf5f2ed, 0.06);
+    g.fillStyle(0x1e1a16, 1.0);
     for (let i = 0; i < pts.length - 1; i++) {
       const ax = pts[i].x,   ay = pts[i].y;
       const bx = pts[i+1].x, by = pts[i+1].y;
@@ -108,7 +108,7 @@ class MarbleScene extends Phaser.Scene {
       const len = Math.hypot(dx, dy);
       if (len === 0) continue;
       const nx = -dy/len * hw, ny = dx/len * hw;
-      g.lineStyle(2, 0xc0392b, 0.85);
+      g.lineStyle(3, 0xc0392b, 1.0);
       g.beginPath(); g.moveTo(ax+nx, ay+ny); g.lineTo(bx+nx, by+ny); g.strokePath();
       g.beginPath(); g.moveTo(ax-nx, ay-ny); g.lineTo(bx-nx, by-ny); g.strokePath();
     }

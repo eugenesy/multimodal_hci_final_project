@@ -20,14 +20,14 @@
     }
     #topbar-wordmark {
       font-family: 'Syne', sans-serif;
-      font-size: 13px;
+      font-size: 18px;
       font-weight: 800;
       color: var(--cream);
       letter-spacing: 0.16em;
     }
     #topbar-wordmark span {
       font-family: 'Barlow', sans-serif;
-      font-size: 9px;
+      font-size: 13px;
       font-weight: 300;
       color: var(--gray);
       letter-spacing: 0.1em;
@@ -36,18 +36,18 @@
     #topbar-right { display: flex; align-items: center; gap: 12px; }
     #round-label {
       font-family: 'Barlow', sans-serif;
-      font-size: 8px;
+      font-size: 13px;
       font-weight: 300;
       color: var(--gray);
       letter-spacing: 0.1em;
     }
     #phase-badge {
       font-family: 'Syne', sans-serif;
-      font-size: 8px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      padding: 3px 10px;
+      padding: 5px 14px;
       color: var(--black);
       background: var(--rule);
     }
@@ -60,21 +60,21 @@
     #main {
       flex: 1;
       display: grid;
-      grid-template-columns: 210px 1fr 1fr;
+      grid-template-columns: 260px 1fr 1fr;
       overflow: hidden;
     }
     .admin-col {
-      padding: 14px 16px;
+      padding: 20px 22px;
       border-right: 1px solid var(--rule);
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
     }
     .admin-col:last-child { border-right: none; }
     .col-title {
       font-family: 'Barlow', sans-serif;
-      font-size: 7px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.2em;
       text-transform: uppercase;
@@ -84,52 +84,52 @@
 
     /* ── Participant card ── */
     .player-card {
-      border-left: 3px solid var(--red);
-      padding: 8px 10px;
+      border-left: 4px solid var(--red);
+      padding: 12px 14px;
       background: #ede9e2;
     }
     .player-name {
       font-family: 'Syne', sans-serif;
-      font-size: 13px;
+      font-size: 18px;
       font-weight: 700;
       color: var(--black);
     }
     .player-meta {
       font-family: 'Barlow', sans-serif;
-      font-size: 7.5px;
+      font-size: 13px;
       font-weight: 300;
       color: var(--gray);
-      margin-top: 2px;
+      margin-top: 4px;
     }
     .player-empty {
       font-family: 'Barlow', sans-serif;
-      font-size: 9px;
+      font-size: 14px;
       color: #bbb;
       letter-spacing: 0.08em;
     }
 
     /* ── QR ── */
     #qr-single {
-      width: 90px; height: 90px;
+      width: 120px; height: 120px;
       image-rendering: pixelated;
       background: #eee;
       display: block;
     }
     #url-single {
       font-family: 'Barlow', sans-serif;
-      font-size: 7px;
+      font-size: 11px;
       color: var(--gray);
       word-break: break-all;
-      margin-top: 4px;
+      margin-top: 6px;
     }
 
     /* ── Level buttons ── */
     .level-btn {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 14px;
       border: 1.5px solid var(--black);
-      padding: 8px 10px;
+      padding: 14px 16px;
       cursor: pointer;
       background: transparent;
       width: 100%;
@@ -141,32 +141,32 @@
     .level-btn.done { border-color: var(--rule); }
     .lvl-num {
       font-family: 'Syne', sans-serif;
-      font-size: 20px;
+      font-size: 28px;
       font-weight: 800;
       color: var(--black);
       line-height: 1;
-      min-width: 22px;
+      min-width: 28px;
     }
     .level-btn.done .lvl-num { color: var(--rule); }
     .lvl-title {
       font-family: 'Syne', sans-serif;
-      font-size: 9.5px;
+      font-size: 14px;
       font-weight: 700;
       color: var(--black);
     }
     .lvl-desc {
       font-family: 'Barlow', sans-serif;
-      font-size: 7.5px;
+      font-size: 12px;
       font-weight: 300;
       color: var(--gray);
-      margin-top: 1px;
+      margin-top: 2px;
     }
     .level-btn.done .lvl-title,
     .level-btn.done .lvl-desc { color: var(--rule); }
 
     #lobby-btn {
       border: 1px solid var(--rule);
-      padding: 7px 10px;
+      padding: 11px 14px;
       background: transparent;
       display: flex;
       justify-content: space-between;
@@ -175,12 +175,12 @@
     }
     #lobby-btn-label {
       font-family: 'Barlow', sans-serif;
-      font-size: 8px;
+      font-size: 13px;
       color: var(--gray);
     }
     #lobby-btn-action {
       font-family: 'Syne', sans-serif;
-      font-size: 8px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--red);
       letter-spacing: 0.1em;
@@ -189,40 +189,40 @@
     /* ── Results ── */
     .result-round-label {
       font-family: 'Barlow', sans-serif;
-      font-size: 7px;
+      font-size: 11px;
       color: var(--gray);
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .result-entry {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 0;
+      padding: 10px 0;
       border-bottom: 1px solid var(--rule);
     }
     .result-entry:last-child { border-bottom: none; }
     .re-name {
       font-family: 'Syne', sans-serif;
-      font-size: 11px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--black);
     }
     .re-meta {
       font-family: 'Barlow', sans-serif;
-      font-size: 7.5px;
+      font-size: 12px;
       color: var(--gray);
     }
     .re-falls {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 14px;
+      font-size: 20px;
       font-weight: 600;
       color: var(--red);
     }
     .results-empty {
       font-family: 'Barlow', sans-serif;
-      font-size: 9px;
+      font-size: 14px;
       color: #bbb;
       letter-spacing: 0.08em;
     }
@@ -230,13 +230,13 @@
     /* ── Export ── */
     .export-btn {
       border: 1.5px solid var(--black);
-      padding: 7px;
+      padding: 11px;
       text-align: center;
       cursor: pointer;
       text-decoration: none;
       display: block;
       font-family: 'Syne', sans-serif;
-      font-size: 8px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--black);
       letter-spacing: 0.1em;
