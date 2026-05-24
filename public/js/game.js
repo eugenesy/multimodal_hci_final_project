@@ -1,0 +1,361 @@
+'use strict';
+
+// ─── Fixed constants ──────────────────────────────────────────────────────────
+const BALL_R       = 14;    // px — ball collision radius
+const BALL_ACCEL   = 40;    // px/s² per degree of tilt
+const BALL_MAX_SPD = 200;   // px/s — lower cap; precision task, not a speed game
+const STUN_MS      = 1200;  // ms — stun on fall (longer than maze hit to feel like a penalty)
+const ARENA_M      = 60;    // px — margin from screen edge
+const PROX_HYST    = 6;     // px — hysteresis band to prevent level flicker
+// FIXED across all difficulty levels — keeps time_at_level_X_ms comparable across
+// conditions. Gap = (halfWidth − distToPath): same absolute px-from-edge at each level.
+const PROX_T = [40, 20, 8]; // px from path edge: NEAR / WARN / DANGER
+
+// ─── Per-level difficulty configs ─────────────────────────────────────────────
+// Only halfWidth (corridor width), drag (ball inertia), and round duration vary.
+// Narrower halfWidth + higher drag = requires more precise and anticipatory tilt.
+// NOTE: On Level 3 (halfWidth=35 < PROX_T[0]=40), the ball is always in at least
+// NEAR proximity — there is no feedback-free zone. This is intentional difficulty.
+const LEVEL_CONFIG = {
+  1: { halfWidth: 80, drag: 2.5, roundMs: 90_000 },
+  2: { halfWidth: 55, drag: 2.0, roundMs: 75_000 },
+  3: { halfWidth: 35, drag: 1.5, roundMs: 60_000 },
+};
+
+// ─── Pre-designed paths (one per level) ──────────────────────────────────────
+// Waypoints as fractions of arena dimensions. Scaled to px in create().
+// Index 0 = START (spawn), all subsequent indices are checkpoints, last = END.
+const PATHS = {
+  1: [ // gentle S-curve — 4 checkpoints
+    {fx:0.10,fy:0.50}, {fx:0.28,fy:0.20}, {fx:0.50,fy:0.50},
+    {fx:0.72,fy:0.80}, {fx:0.90,fy:0.50},
+  ],
+  2: [ // N-shape with steeper angles — 4 checkpoints
+    {fx:0.10,fy:0.80}, {fx:0.10,fy:0.15}, {fx:0.40,fy:0.80},
+    {fx:0.60,fy:0.15}, {fx:0.90,fy:0.80},
+  ],
+  3: [ // tight zigzag — 6 checkpoints
+    {fx:0.10,fy:0.85}, {fx:0.10,fy:0.15}, {fx:0.33,fy:0.15},
+    {fx:0.33,fy:0.85}, {fx:0.56,fy:0.85}, {fx:0.78,fy:0.15},
+    {fx:0.90,fy:0.15},
+  ],
+};
+
+// ─── TightropeScene ───────────────────────────────────────────────────────────
+// Scene key kept as 'MazeScene' to avoid rewiring display.js references.
+class MarbleScene extends Phaser.Scene {
+  constructor() { super({ key: 'MazeScene' }); }
+
+  init(data) {
+    this._players    = data.players || [];
+    this._cbs        = {
+      onWallHit:         data.onWallHit         || (() => {}),  // called on each fall
+      onGameEnd:         data.onGameEnd          || (() => {}),
+      onProximityChange: data.onProximityChange  || (() => {}),
+    };
+    this._cfg        = LEVEL_CONFIG[data.level] || LEVEL_CONFIG[1];
+    this._pathDef    = PATHS[data.level]        || PATHS[1];
+    this._tilt       = {};
+    this._state      = {};
+    this._paused     = false;
+    this._ended      = false;
+    this._roundStart = 0;
+  }
+
+  preload() {}
+
+  create() {
+    const W  = this.scale.width;
+    const H  = this.scale.height;
+    const AX = ARENA_M, AY = ARENA_M, AR = W - ARENA_M, AB = H - ARENA_M;
+    const AW = AR - AX, AH = AB - AY;
+
+    // Scale fractional path coordinates to real px
+    this._pathPts = this._pathDef.map(({fx, fy}) => ({
+      x: AX + fx * AW,
+      y: AY + fy * AH,
+    }));
+
+    const hw  = this._cfg.halfWidth;
+    const pts = this._pathPts;
+
+    // ── Draw corridor ──────────────────────────────────────────────────────────
+    const g = this.add.graphics();
+
+    // Filled rectangle per path segment (the walkable corridor)
+    g.fillStyle(0x0d1a2e, 1.0);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const ax = pts[i].x,   ay = pts[i].y;
+      const bx = pts[i+1].x, by = pts[i+1].y;
+      const dx = bx - ax,    dy = by - ay;
+      const len = Math.hypot(dx, dy);
+      if (len === 0) continue;
+      const nx = -dy/len * hw, ny = dx/len * hw;
+      g.beginPath();
+      g.moveTo(ax + nx, ay + ny);
+      g.lineTo(bx + nx, by + ny);
+      g.lineTo(bx - nx, by - ny);
+      g.lineTo(ax - nx, ay - ny);
+      g.closePath();
+      g.fillPath();
+    }
+
+    // Edge lines (both sides of each segment)
+    for (let i = 0; i < pts.length - 1; i++) {
+      const ax = pts[i].x,   ay = pts[i].y;
+      const bx = pts[i+1].x, by = pts[i+1].y;
+      const dx = bx - ax,    dy = by - ay;
+      const len = Math.hypot(dx, dy);
+      if (len === 0) continue;
+      const nx = -dy/len * hw, ny = dx/len * hw;
+      g.lineStyle(2, 0x2266cc, 0.9);
+      g.beginPath(); g.moveTo(ax+nx, ay+ny); g.lineTo(bx+nx, by+ny); g.strokePath();
+      g.beginPath(); g.moveTo(ax-nx, ay-ny); g.lineTo(bx-nx, by-ny); g.strokePath();
+    }
+
+    // Center guide line (subtle)
+    g.lineStyle(1, 0x334466, 0.4);
+    g.beginPath();
+    pts.forEach((p, i) => i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y));
+    g.strokePath();
+
+    // ── Checkpoint markers ─────────────────────────────────────────────────────
+    const cpG = this.add.graphics();
+    pts.forEach((p, i) => {
+      if (i === 0) {
+        cpG.lineStyle(3, 0x00ff88, 1.0);
+        cpG.strokeCircle(p.x, p.y, 22);
+        this.add.text(p.x, p.y, 'START', {
+          fontSize: '10px', fontFamily: 'Courier New', color: '#00ff88',
+        }).setOrigin(0.5, 0.5).setDepth(5);
+      } else if (i === pts.length - 1) {
+        cpG.lineStyle(3, 0xffd700, 1.0);
+        cpG.strokeCircle(p.x, p.y, 22);
+        this.add.text(p.x, p.y, 'END', {
+          fontSize: '10px', fontFamily: 'Courier New', color: '#ffd700',
+        }).setOrigin(0.5, 0.5).setDepth(5);
+      } else {
+        cpG.lineStyle(2, 0x445566, 0.8);
+        cpG.strokeCircle(p.x, p.y, 12);
+        this.add.text(p.x, p.y, String(i), {
+          fontSize: '9px', fontFamily: 'Courier New', color: '#445566',
+        }).setOrigin(0.5, 0.5).setDepth(5);
+      }
+    });
+
+    // ── Player ball ────────────────────────────────────────────────────────────
+    this._players.forEach((p) => {
+      const start    = pts[0];
+      const hexColor = Phaser.Display.Color.HexStringToColor(p.color).color;
+
+      const ball = this.add.graphics();
+      ball.fillStyle(hexColor, 1);
+      ball.fillCircle(0, 0, BALL_R);
+      ball.lineStyle(2.5, 0xffffff, 0.45);
+      ball.strokeCircle(0, 0, BALL_R);
+      ball.setDepth(10);
+      ball.x = start.x;
+      ball.y = start.y;
+
+      const nameLabel = this.add.text(0, 0, (p.name || `P${p.playerNum}`).slice(0, 10), {
+        fontSize: '10px', fontFamily: 'Courier New',
+        color: p.color, stroke: '#000000', strokeThickness: 2,
+      }).setDepth(12).setOrigin(0.5, 0);
+
+      this._state[p.playerNum] = {
+        ball, nameLabel,
+        vx: 0, vy: 0,
+        falls:         0,
+        checkpointIdx: 0,
+        stunUntil:     0,
+        proxLevel:     0,
+        proxMs:        { 1: 0, 2: 0, 3: 0 },
+      };
+    });
+
+    // ── HUD ────────────────────────────────────────────────────────────────────
+    this._timerText = this.add.text(W / 2, ARENA_M / 2, '1:30', {
+      fontSize: '18px', fontFamily: 'Courier New', color: '#aaaaaa',
+    }).setOrigin(0.5, 0.5).setDepth(20);
+
+    this._fallsText = this.add.text(W - ARENA_M, ARENA_M / 2, 'Falls: 0', {
+      fontSize: '14px', fontFamily: 'Courier New', color: '#ff6644',
+    }).setOrigin(1, 0.5).setDepth(20);
+
+    this._cpText = this.add.text(ARENA_M, ARENA_M / 2, `0 / ${pts.length - 1}`, {
+      fontSize: '14px', fontFamily: 'Courier New', color: '#00ff88',
+    }).setOrigin(0, 0.5).setDepth(20);
+
+    this.game.events.emit('ready');
+  }
+
+  // ─── Update ──────────────────────────────────────────────────────────────────
+  update(time, delta) {
+    if (this._paused || this._ended) return;
+    if (this._roundStart === 0) this._roundStart = time;
+    const dt  = delta / 1000;
+    const pts = this._pathPts;
+    const hw  = this._cfg.halfWidth;
+
+    // Round countdown
+    const left = Math.max(0, this._cfg.roundMs - (time - this._roundStart));
+    const mins = Math.floor(left / 60000);
+    const secs = Math.floor((left % 60000) / 1000);
+    this._timerText.setText(`${mins}:${String(secs).padStart(2, '0')}`);
+    if (left <= 0) { this._endGame(); return; }
+
+    for (const p of this._players) {
+      const s       = this._state[p.playerNum];
+      const tilt    = this._tilt[p.playerNum] || { gamma: 0, beta: 0 };
+      const stunned = time < s.stunUntil;
+
+      // Acceleration from tilt (reduced while stunned so ball doesn't escape checkpoint)
+      const accelMult = stunned ? 0.1 : 1.0;
+      s.vx += tilt.gamma * BALL_ACCEL * accelMult * dt;
+      s.vy += tilt.beta  * BALL_ACCEL * accelMult * dt;
+
+      // Velocity-proportional drag
+      s.vx -= s.vx * this._cfg.drag * dt;
+      s.vy -= s.vy * this._cfg.drag * dt;
+
+      // Speed cap
+      const spd = Math.hypot(s.vx, s.vy);
+      if (spd > BALL_MAX_SPD) { s.vx = s.vx/spd * BALL_MAX_SPD; s.vy = s.vy/spd * BALL_MAX_SPD; }
+
+      s.ball.x += s.vx * dt;
+      s.ball.y += s.vy * dt;
+
+      // ── Fall detection ──────────────────────────────────────────────────────
+      const dist = this._distToPath(s.ball.x, s.ball.y);
+      if (dist > hw && !stunned) {
+        s.falls++;
+        this._cbs.onWallHit(p.playerNum);
+        const cp  = pts[s.checkpointIdx];
+        s.ball.x  = cp.x;
+        s.ball.y  = cp.y;
+        s.vx = 0; s.vy = 0;
+        s.stunUntil = time + STUN_MS;
+        this.tweens.add({
+          targets: s.ball, alpha: 0.15, duration: 80, yoyo: true, repeat: 4,
+          onComplete: () => { if (s.ball) s.ball.alpha = 1; },
+        });
+      }
+
+      // ── Checkpoint advancement (only when not stunned) ──────────────────────
+      if (!stunned) {
+        const nextIdx = s.checkpointIdx + 1;
+        if (nextIdx < pts.length) {
+          const np = pts[nextIdx];
+          if (Math.hypot(s.ball.x - np.x, s.ball.y - np.y) < 30) {
+            s.checkpointIdx = nextIdx;
+          }
+        }
+      }
+
+      // ── Proximity ───────────────────────────────────────────────────────────
+      const gap      = hw - dist;  // positive = inside corridor, 0 = at edge
+      const newLevel = this._proxLevel(gap, s.proxLevel);
+      if (newLevel !== s.proxLevel) {
+        s.proxLevel = newLevel;
+        this._cbs.onProximityChange(p.playerNum, newLevel);
+      }
+      if (newLevel > 0) s.proxMs[newLevel] += delta;
+
+      // ── HUD labels ──────────────────────────────────────────────────────────
+      s.nameLabel.x = s.ball.x;
+      s.nameLabel.y = s.ball.y + BALL_R + 3;
+
+      // Update HUD counters for the (only) player
+      if (p === this._players[0]) {
+        this._fallsText.setText(`Falls: ${s.falls}`);
+        this._cpText.setText(`${s.checkpointIdx} / ${pts.length - 1}`);
+      }
+    }
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────────
+  _distToPath(x, y) {
+    // Minimum distance from point (x,y) to any segment of the path centerline
+    let minDist = Infinity;
+    const pts   = this._pathPts;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const ax = pts[i].x,   ay = pts[i].y;
+      const bx = pts[i+1].x, by = pts[i+1].y;
+      const dx = bx - ax,    dy = by - ay;
+      const lenSq = dx*dx + dy*dy;
+      const t  = lenSq > 0 ? Math.max(0, Math.min(1, ((x-ax)*dx + (y-ay)*dy) / lenSq)) : 0;
+      const cx = ax + t*dx, cy = ay + t*dy;
+      const d  = Math.hypot(x - cx, y - cy);
+      if (d < minDist) minDist = d;
+    }
+    return minDist;
+  }
+
+  _proxLevel(gap, current) {
+    const [t1, t2, t3] = PROX_T;
+    const h = PROX_HYST;
+    // Ascending: immediate entry into higher danger levels
+    if (gap < t3) return 3;
+    if (gap < t2 && current < 2) return 2;
+    if (gap < t1 && current < 1) return 1;
+    // Descending: hysteresis at each threshold prevents rapid toggling
+    if (current === 3 && gap > t3 + h) return 2;
+    if (current === 2 && gap > t2 + h) return 1;
+    if (current === 1 && gap > t1 + h) return 0;
+    return current;
+  }
+
+  _endGame() {
+    if (this._ended) return;
+    this._ended = true;
+    const rankings = this._players.map(p => {
+      const s = this._state[p.playerNum];
+      return {
+        playerNum:           p.playerNum,
+        falls:               s.falls,
+        checkpoints:         s.checkpointIdx,
+        totalCheckpoints:    this._pathPts.length - 1,
+        score:               s.checkpointIdx * 100 - s.falls * 25,
+        time_at_level_1_ms:  s.proxMs[1],
+        time_at_level_2_ms:  s.proxMs[2],
+        time_at_level_3_ms:  s.proxMs[3],
+      };
+    });
+    this._cbs.onGameEnd({ rankings, round_duration_ms: this._cfg.roundMs });
+  }
+
+  // ─── Public API (called by display.js) ───────────────────────────────────────
+  setTilt(playerNum, gamma, beta) {
+    this._tilt[playerNum] = { gamma, beta };
+  }
+
+  getStats() {
+    const out = {};
+    for (const p of this._players) {
+      const s = this._state[p.playerNum];
+      if (s) out[p.playerNum] = {
+        score:       s.checkpointIdx * 100 - s.falls * 25,
+        falls:       s.falls,
+        checkpoints: s.checkpointIdx,
+      };
+    }
+    return out;
+  }
+
+  setPaused(v) { this._paused = !!v; }
+}
+
+// ─── Factory (called by display.js) ──────────────────────────────────────────
+function createPhaserGame(containerId, initData) {
+  const config = {
+    type:            Phaser.AUTO,
+    parent:          containerId,
+    width:           window.innerWidth,
+    height:          window.innerHeight,
+    backgroundColor: '#0a0a0f',
+    scene:           MarbleScene,
+  };
+  const game = new Phaser.Game(config);
+  game.scene.start('MazeScene', initData);
+  return game;
+}

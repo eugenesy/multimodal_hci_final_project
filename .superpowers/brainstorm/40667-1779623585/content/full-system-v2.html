@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PathSense Design System v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f2ed;
+    --black: #1a1a1a;
+    --red: #c0392b;
+    --gray: #888;
+    --rule: #d0ccc6;
+    --dark: #111111;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #e8e4de; font-family: 'Barlow', sans-serif; padding: 28px 24px 56px; }
+
+  .page-title { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; color:var(--black); margin-bottom:4px; }
+  .page-sub { font-family:'Barlow',sans-serif; font-size:12px; font-weight:300; color:#666; margin-bottom:28px; }
+
+  .section-header { display:flex; align-items:center; gap:12px; margin:32px 0 14px; }
+  .section-header h2 { font-family:'Syne',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; color:var(--red); white-space:nowrap; }
+  .section-header .rule { flex:1; height:1px; background:var(--rule); }
+
+  /* ─── PHONE SHELL ─── */
+  .phone-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start; }
+  .phone { background:var(--cream); border-radius:20px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+  .phone-label { font-family:'Barlow',sans-serif; font-size:9px; font-weight:400; color:#999; letter-spacing:0.1em; text-transform:uppercase; margin-top:7px; text-align:center; }
+
+  .ph-topbar { background:var(--black); padding:9px 13px 7px; display:flex; justify-content:space-between; align-items:center; }
+  .ph-wordmark { font-family:'Syne',sans-serif; font-size:10px; font-weight:800; color:var(--cream); letter-spacing:0.14em; }
+  .ph-session { font-family:'Barlow',sans-serif; font-size:7.5px; font-weight:300; color:var(--red); letter-spacing:0.08em; }
+  .ph-stripe { height:3px; background:var(--red); }
+  .ph-body { padding:14px 13px; }
+  .ph-eyebrow { font-family:'Barlow',sans-serif; font-size:7px; font-weight:600; letter-spacing:0.22em; text-transform:uppercase; color:var(--red); margin-bottom:4px; }
+  .ph-headline { font-family:'Syne',sans-serif; font-weight:800; color:var(--black); line-height:1.0; }
+  .ph-rule { height:1.5px; background:var(--black); margin:11px 0; }
+  .ph-thin-rule { height:1px; background:var(--rule); margin:9px 0; }
+  .ph-body-text { font-family:'Barlow',sans-serif; font-size:9px; font-weight:300; color:#555; line-height:1.6; }
+
+  .ph-field-label { font-family:'Barlow',sans-serif; font-size:7px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--black); margin-bottom:3px; margin-top:8px; }
+  .ph-input { border:1.5px solid var(--black); background:transparent; padding:7px 9px; font-family:'Barlow',sans-serif; font-size:9.5px; font-weight:400; color:var(--black); width:100%; }
+  .ph-select-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:2px; }
+  .ph-chip { border:1px solid var(--rule); padding:3px 7px; font-family:'Barlow',sans-serif; font-size:7.5px; color:#999; cursor:pointer; }
+  .ph-chip.sel { border-color:var(--black); background:var(--black); color:var(--cream); }
+  .ph-btn { display:block; width:100%; background:var(--black); color:var(--cream); font-family:'Syne',sans-serif; font-size:8.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; padding:9px; text-align:center; margin-top:10px; border:none; }
+
+  .badge { display:inline-block; background:var(--red); color:#fff; font-family:'Syne',sans-serif; font-size:7px; font-weight:700; letter-spacing:0.18em; padding:3px 7px; }
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:11px; }
+  .stat-box { background:var(--black); padding:7px 8px; }
+  .stat-val { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--cream); line-height:1; }
+  .stat-key { font-family:'Barlow',sans-serif; font-size:6px; font-weight:400; color:#888; letter-spacing:0.12em; text-transform:uppercase; margin-top:2px; }
+
+  /* ─── ADMIN ─── */
+  .admin-shell { background:var(--cream); border-radius:6px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.12); }
+  .admin-topbar { background:var(--black); padding:11px 20px; display:flex; justify-content:space-between; align-items:center; }
+  .admin-wordmark { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; color:var(--cream); letter-spacing:0.16em; }
+  .admin-wordmark span { color:var(--red); font-size:9px; font-weight:400; letter-spacing:0.1em; margin-left:10px; font-family:'Barlow',sans-serif; }
+  .admin-stripe { height:3px; background:var(--red); }
+  .admin-body { display:grid; grid-template-columns:200px 1fr 1fr; }
+  .admin-col { padding:14px 16px; border-right:1px solid var(--rule); }
+  .admin-col:last-child { border-right:none; }
+  .admin-col-title { font-family:'Barlow',sans-serif; font-size:7px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--red); margin-bottom:10px; }
+  .player-card { border-left:3px solid var(--red); padding:7px 9px; background:#efece7; margin-bottom:8px; }
+  .player-name { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; color:var(--black); }
+  .player-meta { font-family:'Barlow',sans-serif; font-size:7.5px; font-weight:300; color:#888; margin-top:2px; }
+  .lvl-btn { display:flex; align-items:center; gap:9px; border:1.5px solid var(--black); padding:8px 10px; margin-bottom:6px; cursor:pointer; background:transparent; }
+  .lvl-btn .lnum { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; color:var(--black); line-height:1; min-width:20px; }
+  .lvl-btn .ltitle { font-family:'Syne',sans-serif; font-size:9.5px; font-weight:700; color:var(--black); }
+  .lvl-btn .ldesc { font-family:'Barlow',sans-serif; font-size:7.5px; font-weight:300; color:#888; margin-top:1px; }
+  .lvl-btn.active { background:var(--black); }
+  .lvl-btn.active .lnum, .lvl-btn.active .ltitle { color:var(--cream); }
+  .result-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--rule); }
+  .result-row:last-child { border-bottom:none; }
+
+  .qr-box { border:1.5px solid var(--rule); width:72px; height:72px; display:flex; align-items:center; justify-content:center; margin:6px 0; }
+  .qr-url { font-family:'Barlow',sans-serif; font-size:7px; color:#888; word-break:break-all; margin-top:3px; }
+
+  /* ─── GAME DISPLAY ─── */
+  .display-outer { background:var(--cream); border-radius:6px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.12); }
+  .display-topbar { background:var(--black); padding:9px 20px; display:flex; justify-content:space-between; align-items:center; }
+  .display-wordmark { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; color:var(--cream); letter-spacing:0.18em; }
+  .display-stripe { height:3px; background:var(--red); }
+
+  /* WAITING screen */
+  .display-waiting { background:var(--cream); padding:32px 24px; text-align:center; position:relative; min-height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
+  .grid-bg { position:absolute; inset:0; }
+  .display-waiting-title { font-family:'Syne',sans-serif; font-size:44px; font-weight:800; color:var(--black); letter-spacing:0.04em; line-height:1; margin-bottom:8px; position:relative; z-index:1; }
+  .display-red-rule { width:40px; height:2.5px; background:var(--red); margin:10px auto; position:relative; z-index:1; }
+  .display-sub { font-family:'Barlow',sans-serif; font-size:10px; font-weight:300; color:#aaa; letter-spacing:0.1em; text-transform:uppercase; position:relative; z-index:1; margin-bottom:20px; }
+  .display-dot { width:48px; height:48px; background:var(--red); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 6px; position:relative; z-index:1; }
+  .display-dot-txt { font-family:'Syne',sans-serif; font-size:10px; font-weight:800; color:#fff; letter-spacing:0.1em; }
+  .display-pname { font-family:'Barlow',sans-serif; font-size:10px; font-weight:400; color:var(--black); letter-spacing:0.06em; position:relative; z-index:1; }
+  .display-pmod { font-family:'Barlow',sans-serif; font-size:8px; color:#aaa; margin-top:2px; position:relative; z-index:1; }
+
+  /* ACTIVE game canvas area */
+  .display-active { display:grid; grid-template-columns:1fr 120px; min-height:220px; }
+  .game-canvas { background:var(--dark); position:relative; overflow:hidden; }
+  .canvas-inner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+
+  /* SVG tightrope path preview */
+  .game-hud { position:absolute; top:10px; left:0; right:0; display:flex; justify-content:space-between; padding:0 14px; }
+  .hud-pill { background:rgba(245,242,237,0.1); border:1px solid rgba(245,242,237,0.15); padding:4px 10px; display:flex; flex-direction:column; align-items:center; }
+  .hud-val { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--cream); line-height:1; }
+  .hud-key { font-family:'Barlow',sans-serif; font-size:6px; color:#888; letter-spacing:0.12em; text-transform:uppercase; margin-top:1px; }
+  .hud-timer { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:var(--cream); }
+  .hud-timer-key { font-family:'Barlow',sans-serif; font-size:6px; color:#888; letter-spacing:0.12em; text-transform:uppercase; margin-top:1px; }
+
+  .game-sidebar { background:var(--cream); padding:12px 10px; border-left:1.5px solid var(--rule); display:flex; flex-direction:column; gap:8px; }
+  .gs-title { font-family:'Barlow',sans-serif; font-size:7px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--red); margin-bottom:4px; }
+  .gs-stat { border-top:1px solid var(--rule); padding-top:8px; }
+  .gs-val { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--black); line-height:1; }
+  .gs-key { font-family:'Barlow',sans-serif; font-size:7px; color:#999; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
+
+  /* RESULTS screen */
+  .display-results { background:var(--cream); padding:24px 28px; display:grid; grid-template-columns:1fr 1fr; gap:32px; min-height:200px; }
+  .res-left { display:flex; flex-direction:column; justify-content:center; }
+  .res-eyebrow { font-family:'Barlow',sans-serif; font-size:8px; font-weight:600; letter-spacing:0.22em; text-transform:uppercase; color:var(--red); margin-bottom:6px; }
+  .res-title { font-family:'Syne',sans-serif; font-size:34px; font-weight:800; color:var(--black); line-height:1; margin-bottom:10px; }
+  .res-rule { height:1.5px; background:var(--black); width:48px; margin-bottom:12px; }
+  .res-player { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; color:var(--red); margin-bottom:3px; }
+  .res-mod { font-family:'Barlow',sans-serif; font-size:9px; font-weight:300; color:#888; }
+  .res-right { display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:center; }
+  .res-stat { border:1.5px solid var(--rule); padding:10px 12px; }
+  .res-stat-val { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; color:var(--black); line-height:1; }
+  .res-stat-val.red { color:var(--red); }
+  .res-stat-key { font-family:'Barlow',sans-serif; font-size:7.5px; color:#999; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
+  .res-next { grid-column:1/-1; background:var(--black); padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
+  .res-next-txt { font-family:'Syne',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.12em; color:var(--cream); }
+  .res-next-cd { font-family:'Barlow',sans-serif; font-size:8px; font-weight:300; color:#888; }
+
+  /* display active label banner */
+  .display-level-banner { background:var(--red); padding:5px 14px; display:flex; align-items:center; gap:12px; }
+  .dlb-txt { font-family:'Syne',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.16em; color:#fff; }
+  .dlb-sep { width:1px; height:14px; background:rgba(255,255,255,0.3); }
+</style>
+</head>
+<body>
+
+<div class="page-title">PathSense — Design System v2</div>
+<div class="page-sub">Updated: demographics on join · survey is free text only · game display redesigned</div>
+
+<!-- ══ CONTROLLER ══ -->
+<div class="section-header"><h2>Controller (phone)</h2><div class="rule"></div></div>
+
+<div class="phone-row">
+
+  <!-- 1: JOIN + DEMOGRAPHICS -->
+  <div>
+    <div class="phone">
+      <div class="ph-topbar"><span class="ph-wordmark">PATHSENSE</span><span class="ph-session">STUDY</span></div>
+      <div class="ph-stripe"></div>
+      <div class="ph-body">
+        <div class="ph-eyebrow">Participant Setup</div>
+        <div class="ph-headline" style="font-size:20px">Join<br>Session</div>
+        <div class="ph-rule"></div>
+        <div class="ph-field-label">Your Name</div>
+        <div class="ph-input" style="color:#bbb;font-size:9px">Enter name…</div>
+        <div class="ph-field-label">Handedness</div>
+        <div class="ph-select-row">
+          <div class="ph-chip sel">Right</div>
+          <div class="ph-chip">Left</div>
+          <div class="ph-chip">Either</div>
+        </div>
+        <div class="ph-field-label">Gaming experience</div>
+        <div class="ph-select-row">
+          <div class="ph-chip">None</div>
+          <div class="ph-chip sel">Casual</div>
+          <div class="ph-chip">Regular</div>
+          <div class="ph-chip">Frequent</div>
+        </div>
+        <div class="ph-field-label">Tilt game experience?</div>
+        <div class="ph-select-row">
+          <div class="ph-chip sel">Yes</div>
+          <div class="ph-chip">No</div>
+        </div>
+        <div class="ph-field-label">Age</div>
+        <div class="ph-input" style="color:#bbb;font-size:9px">—</div>
+        <div class="ph-field-label">Gender</div>
+        <div class="ph-select-row">
+          <div class="ph-chip">Man</div>
+          <div class="ph-chip sel">Woman</div>
+          <div class="ph-chip">Non-binary</div>
+        </div>
+        <div class="ph-btn">JOIN SESSION →</div>
+        <div style="margin-top:8px;text-align:center;font-family:'Barlow',sans-serif;font-size:7px;color:#bbb;letter-spacing:0.08em">UBC HCI Lab · Data used for research only</div>
+      </div>
+    </div>
+    <div class="phone-label">1 — Join + Demographics</div>
+  </div>
+
+  <!-- 2: READY -->
+  <div>
+    <div class="phone">
+      <div class="ph-topbar"><span class="ph-wordmark">PATHSENSE</span><span class="ph-session">P1 · HAPTIC</span></div>
+      <div class="ph-stripe"></div>
+      <div class="ph-body">
+        <div class="ph-eyebrow">Waiting to start</div>
+        <div class="ph-headline" style="font-size:24px">Player 1<br>Ready</div>
+        <div class="ph-rule"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
+          <div class="badge">HAPTIC</div>
+          <div style="font-family:'Barlow',sans-serif;font-size:8px;font-weight:300;color:#888">Session feedback</div>
+        </div>
+        <div class="ph-body-text" style="margin-bottom:10px">Your phone will vibrate — pulses grow faster and stronger as your ball nears the path edge.</div>
+        <div class="ph-thin-rule"></div>
+        <div style="font-family:'Barlow',sans-serif;font-size:8.5px;font-weight:600;color:var(--black);margin-top:6px;margin-bottom:3px">Use your non-dominant hand only.</div>
+        <div class="ph-body-text">Hold and tilt the phone with your weaker hand. Dominant hand rests at your side.</div>
+        <div class="ph-thin-rule"></div>
+        <div class="ph-body-text" style="color:#aaa">Waiting for researcher to start…</div>
+      </div>
+    </div>
+    <div class="phone-label">2 — Ready</div>
+  </div>
+
+  <!-- 3: PLAYING -->
+  <div>
+    <div class="phone">
+      <div class="ph-topbar"><span class="ph-wordmark">PATHSENSE</span><span class="ph-session">P1 · HAPTIC</span></div>
+      <div class="ph-stripe"></div>
+      <div class="ph-body">
+        <div class="ph-eyebrow">Now Playing</div>
+        <div class="ph-headline" style="font-size:26px">LEVEL<br>ONE</div>
+        <div class="ph-rule"></div>
+        <div class="ph-body-text">Tilt with your non-dominant hand only.</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-val">1:28</div><div class="stat-key">Remaining</div></div>
+          <div class="stat-box"><div class="stat-val">0</div><div class="stat-key">Falls</div></div>
+          <div class="stat-box"><div class="stat-val">3/4</div><div class="stat-key">Checkpoints</div></div>
+          <div class="stat-box"><div class="stat-val">300</div><div class="stat-key">Score</div></div>
+        </div>
+        <div style="margin-top:9px;display:flex;align-items:center;gap:6px;">
+          <div class="badge">HAPTIC</div>
+          <div style="font-family:'Barlow',sans-serif;font-size:7.5px;font-weight:300;color:#888">Double-tap to recalibrate</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">3 — Playing</div>
+  </div>
+
+  <!-- 4: SURVEY (feedback only) -->
+  <div>
+    <div class="phone">
+      <div class="ph-topbar"><span class="ph-wordmark">PATHSENSE</span><span class="ph-session">FEEDBACK</span></div>
+      <div class="ph-stripe"></div>
+      <div class="ph-body">
+        <div class="ph-eyebrow">Session Complete</div>
+        <div class="ph-headline" style="font-size:22px">Your<br>Feedback</div>
+        <div class="ph-rule"></div>
+        <div class="ph-body-text" style="margin-bottom:10px">How did the task feel? Any comments on the feedback or difficulty?</div>
+        <div style="border:1.5px solid var(--rule);background:#fff;padding:10px;width:100%;min-height:80px;font-family:'Barlow',sans-serif;font-size:8.5px;color:#ccc;line-height:1.6">Write anything…</div>
+        <div class="ph-btn" style="margin-top:10px">SUBMIT →</div>
+        <div class="ph-btn" style="background:transparent;border:1px solid var(--rule);color:#aaa;margin-top:5px;font-size:7.5px">SKIP</div>
+      </div>
+    </div>
+    <div class="phone-label">4 — Feedback (text only)</div>
+  </div>
+
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div class="section-header"><h2>Admin Panel (researcher laptop)</h2><div class="rule"></div></div>
+<div class="admin-shell">
+  <div class="admin-topbar">
+    <div class="admin-wordmark">PATHSENSE <span>RESEARCHER PANEL</span></div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="font-family:'Barlow',sans-serif;font-size:8px;font-weight:300;color:#888;letter-spacing:0.1em">Round 1 · Level 1 · In Game</div>
+      <div style="background:var(--red);color:#fff;font-family:'Syne',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.14em;padding:3px 10px">GAME</div>
+    </div>
+  </div>
+  <div class="admin-stripe"></div>
+  <div class="admin-body">
+    <div class="admin-col">
+      <div class="admin-col-title">Participant</div>
+      <div class="player-card">
+        <div class="player-name">Alex Chen</div>
+        <div class="player-meta">📳 Haptic · Session 1 · Right-handed</div>
+      </div>
+      <div class="ph-thin-rule" style="margin:8px 0"></div>
+      <div class="admin-col-title">Controller QR</div>
+      <div class="qr-box">
+        <svg width="50" height="50" viewBox="0 0 50 50">
+          <rect x="2" y="2" width="14" height="14" fill="none" stroke="#333" stroke-width="2"/>
+          <rect x="5" y="5" width="8" height="8" fill="#333"/>
+          <rect x="34" y="2" width="14" height="14" fill="none" stroke="#333" stroke-width="2"/>
+          <rect x="37" y="5" width="8" height="8" fill="#333"/>
+          <rect x="2" y="34" width="14" height="14" fill="none" stroke="#333" stroke-width="2"/>
+          <rect x="5" y="37" width="8" height="8" fill="#333"/>
+          <rect x="20" y="2" width="4" height="4" fill="#333"/>
+          <rect x="26" y="8" width="4" height="4" fill="#333"/>
+          <rect x="20" y="20" width="4" height="4" fill="#333"/>
+          <rect x="32" y="26" width="4" height="4" fill="#333"/>
+          <rect x="38" y="20" width="4" height="4" fill="#333"/>
+          <rect x="20" y="32" width="4" height="4" fill="#333"/>
+          <rect x="26" y="38" width="4" height="4" fill="#333"/>
+          <rect x="44" y="32" width="4" height="4" fill="#333"/>
+        </svg>
+      </div>
+      <div class="qr-url">192.168.1.42:3000/controller</div>
+    </div>
+    <div class="admin-col">
+      <div class="admin-col-title">Levels</div>
+      <div class="lvl-btn active">
+        <div class="lnum">1</div>
+        <div>
+          <div class="ltitle">Introductory</div>
+          <div class="ldesc" style="color:#aaa">S-curve · 90 s · ±80 px</div>
+        </div>
+      </div>
+      <div class="lvl-btn">
+        <div class="lnum">2</div>
+        <div><div class="ltitle">Moderate</div><div class="ldesc">N-shape · 75 s · ±55 px</div></div>
+      </div>
+      <div class="lvl-btn">
+        <div class="lnum">3</div>
+        <div><div class="ltitle">Hard</div><div class="ldesc">Zigzag · 60 s · ±35 px</div></div>
+      </div>
+      <div style="margin-top:10px;border:1px solid var(--rule);padding:7px 10px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-family:'Barlow',sans-serif;font-size:8px;color:#aaa">Session reset</div>
+        <div style="font-family:'Syne',sans-serif;font-size:8px;font-weight:700;color:var(--red);letter-spacing:0.1em">→ LOBBY</div>
+      </div>
+    </div>
+    <div class="admin-col">
+      <div class="admin-col-title">Results</div>
+      <div style="margin-bottom:6px;">
+        <div style="font-family:'Barlow',sans-serif;font-size:7px;color:#aaa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Round 1 — Level 1</div>
+        <div class="result-row">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--black)">Alex Chen</div>
+            <div style="font-family:'Barlow',sans-serif;font-size:7.5px;color:#888">📳 Haptic · 3/4 checkpoints</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:var(--red)">2 falls</div>
+            <div style="font-family:'Barlow',sans-serif;font-size:8px;color:#888">Score: 250</div>
+          </div>
+        </div>
+      </div>
+      <div class="ph-thin-rule"></div>
+      <div style="display:flex;gap:5px;margin-top:6px">
+        <div style="flex:1;border:1px solid var(--rule);padding:6px 8px;text-align:center;">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--black)">2</div>
+          <div style="font-family:'Barlow',sans-serif;font-size:6.5px;color:#aaa;letter-spacing:0.1em;text-transform:uppercase">Falls</div>
+        </div>
+        <div style="flex:1;border:1px solid var(--rule);padding:6px 8px;text-align:center;">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--black)">250</div>
+          <div style="font-family:'Barlow',sans-serif;font-size:6.5px;color:#aaa;letter-spacing:0.1em;text-transform:uppercase">Score</div>
+        </div>
+        <div style="flex:1;border:1px solid var(--rule);padding:6px 8px;text-align:center;">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--black)">3/4</div>
+          <div style="font-family:'Barlow',sans-serif;font-size:6.5px;color:#aaa;letter-spacing:0.1em;text-transform:uppercase">Checks</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:7px">
+        <div style="flex:1;border:1.5px solid var(--black);padding:7px;text-align:center;cursor:pointer">
+          <div style="font-family:'Syne',sans-serif;font-size:8px;font-weight:700;color:var(--black);letter-spacing:0.1em">↓ CSV</div>
+        </div>
+        <div style="flex:1;border:1.5px solid var(--black);padding:7px;text-align:center;cursor:pointer">
+          <div style="font-family:'Syne',sans-serif;font-size:8px;font-weight:700;color:var(--black);letter-spacing:0.1em">↓ SURVEY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME DISPLAY ══ -->
+<div class="section-header"><h2>Game Display — Waiting</h2><div class="rule"></div></div>
+<div class="display-outer">
+  <div class="display-topbar">
+    <div class="display-wordmark">PATHSENSE</div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-family:'Barlow',sans-serif;font-size:9px;font-weight:300;color:var(--red);letter-spacing:0.1em">WAITING FOR PARTICIPANT</div>
+      <div style="background:var(--red);color:#fff;font-family:'Syne',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.14em;padding:4px 12px">LOBBY</div>
+    </div>
+  </div>
+  <div class="display-stripe"></div>
+  <div class="display-waiting">
+    <svg class="grid-bg" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="25%" y1="0" x2="25%" y2="100%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="75%" y1="0" x2="75%" y2="100%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="0" y1="33%" x2="100%" y2="33%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="0" y1="66%" x2="100%" y2="66%" stroke="#d0ccc6" stroke-width="0.5"/>
+    </svg>
+    <div class="display-waiting-title">PATHSENSE</div>
+    <div class="display-red-rule"></div>
+    <div class="display-sub">Tilt-controlled tightrope · Non-dominant hand study</div>
+    <div>
+      <div class="display-dot"><div class="display-dot-txt">P1</div></div>
+      <div class="display-pname">Alex Chen</div>
+      <div class="display-pmod">📳 HAPTIC · Session 1</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-header"><h2>Game Display — Active Round</h2><div class="rule"></div></div>
+<div class="display-outer">
+  <div class="display-topbar">
+    <div class="display-wordmark">PATHSENSE</div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-family:'Barlow',sans-serif;font-size:9px;font-weight:300;color:var(--cream);letter-spacing:0.1em">Alex Chen · 📳 Haptic</div>
+    </div>
+  </div>
+  <div class="display-level-banner">
+    <span class="dlb-txt">LEVEL 1</span>
+    <div class="dlb-sep"></div>
+    <span class="dlb-txt" style="font-weight:400;letter-spacing:0.1em;opacity:0.8">Gentle S-curve · 90 s</span>
+  </div>
+  <div class="display-active">
+    <div class="game-canvas">
+      <!-- HUD overlay inside canvas -->
+      <div class="game-hud">
+        <div class="hud-pill"><div class="hud-val">0</div><div class="hud-key">Falls</div></div>
+        <div style="text-align:center;padding-top:6px">
+          <div class="hud-timer">1:28</div>
+          <div class="hud-timer-key">Remaining</div>
+        </div>
+        <div class="hud-pill"><div class="hud-val">3/4</div><div class="hud-key">Checkpoints</div></div>
+      </div>
+      <!-- Tightrope path preview (SVG) -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet">
+        <!-- Corridor fill (S-curve approximation) -->
+        <defs>
+          <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#f5f2ed" stop-opacity="0.08"/>
+            <stop offset="50%" stop-color="#f5f2ed" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#f5f2ed" stop-opacity="0.08"/>
+          </linearGradient>
+        </defs>
+        <!-- corridor body -->
+        <path d="M40,100 C80,100 120,40 160,100 C200,160 240,100 280,40 L280,70 C240,130 200,190 160,130 C120,70 80,130 40,130 Z"
+              fill="url(#cg)" stroke="none"/>
+        <!-- edge lines in Bauhaus red -->
+        <path d="M40,100 C80,100 120,40 160,100 C200,160 240,100 280,40"
+              fill="none" stroke="#c0392b" stroke-width="1.5" opacity="0.7"/>
+        <path d="M40,130 C80,130 120,70 160,130 C200,190 240,130 280,70"
+              fill="none" stroke="#c0392b" stroke-width="1.5" opacity="0.7"/>
+        <!-- center guide -->
+        <path d="M40,115 C80,115 120,55 160,115 C200,175 240,115 280,55"
+              fill="none" stroke="#f5f2ed" stroke-width="0.5" opacity="0.15" stroke-dasharray="4,4"/>
+        <!-- START marker -->
+        <circle cx="40" cy="115" r="8" fill="none" stroke="#f5f2ed" stroke-width="1.5" opacity="0.5"/>
+        <!-- END marker -->
+        <circle cx="280" cy="55" r="8" fill="none" stroke="#f5f2ed" stroke-width="1.5" opacity="0.3"/>
+        <!-- Checkpoint markers -->
+        <circle cx="160" cy="115" r="5" fill="none" stroke="#f5f2ed" stroke-width="1" opacity="0.3"/>
+        <!-- Ball (cream) -->
+        <circle cx="105" cy="80" r="9" fill="#f5f2ed" opacity="0.95"/>
+        <circle cx="105" cy="80" r="9" fill="none" stroke="#c0392b" stroke-width="1.5" opacity="0.6"/>
+      </svg>
+    </div>
+    <!-- Sidebar stats -->
+    <div class="game-sidebar">
+      <div class="gs-title">Live Stats</div>
+      <div class="gs-stat"><div class="gs-val">0</div><div class="gs-key">Falls</div></div>
+      <div class="gs-stat"><div class="gs-val">3/4</div><div class="gs-key">Checkpoints</div></div>
+      <div class="gs-stat"><div class="gs-val">300</div><div class="gs-key">Score</div></div>
+      <div class="gs-stat">
+        <div style="display:flex;align-items:center;gap:5px;margin-top:6px">
+          <div style="width:7px;height:7px;background:var(--red);border-radius:50%;animation:pulse 1.2s infinite"></div>
+          <div style="font-family:'Barlow',sans-serif;font-size:7px;color:var(--red);letter-spacing:0.1em;font-weight:600">NEAR</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-header"><h2>Game Display — Round Results</h2><div class="rule"></div></div>
+<div class="display-outer">
+  <div class="display-topbar">
+    <div class="display-wordmark">PATHSENSE</div>
+    <div style="font-family:'Barlow',sans-serif;font-size:9px;font-weight:300;color:var(--red);letter-spacing:0.1em">LEVEL 1 COMPLETE</div>
+  </div>
+  <div class="display-stripe"></div>
+  <div class="display-results">
+    <div class="res-left">
+      <div class="res-eyebrow">Round Complete</div>
+      <div class="res-title">LEVEL<br>ONE</div>
+      <div class="res-rule"></div>
+      <div class="res-player">Alex Chen</div>
+      <div class="res-mod">📳 Haptic feedback · Session 1</div>
+    </div>
+    <div class="res-right">
+      <div class="res-stat">
+        <div class="res-stat-val red">2</div>
+        <div class="res-stat-key">Falls</div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-val">3/4</div>
+        <div class="res-stat-key">Checkpoints</div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-val">250</div>
+        <div class="res-stat-key">Score</div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-val">87s</div>
+        <div class="res-stat-key">Duration</div>
+      </div>
+      <div class="res-next">
+        <div class="res-next-txt">NEXT → LEVEL 2</div>
+        <div class="res-next-cd">Continuing in 18 s…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px;padding:12px 16px;background:#ede9e2;border-left:3px solid var(--red)">
+  <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.14em;color:var(--black);margin-bottom:4px">DESIGN TOKENS — v2</div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap">
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:#666"><strong style="color:var(--black)">Background</strong> Cream #F5F2ED</span>
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:#666"><strong style="color:var(--black)">Type</strong> #1A1A1A</span>
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:var(--red)"><strong>Accent</strong> #C0392B</span>
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:#666"><strong style="color:var(--black)">Game bg</strong> #111111</span>
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:#666"><strong style="color:var(--black)">Display font</strong> Syne 700/800</span>
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:#666"><strong style="color:var(--black)">Body</strong> Barlow 300/400/600</span>
+    <span style="font-family:'Barlow',sans-serif;font-size:9px;color:#666"><strong style="color:var(--black)">Path edges</strong> Red #C0392B · Ball cream #F5F2ED</span>
+  </div>
+</div>
+
+</body>
+</html>

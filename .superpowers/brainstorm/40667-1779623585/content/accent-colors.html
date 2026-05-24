@@ -1,0 +1,531 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  .phone-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 16px;
+    align-items: start;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .phone-shell {
+    width: 100%;
+    max-width: 190px;
+    min-height: 340px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    border: 2px solid transparent;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+  }
+  .phone-wrap:hover .phone-shell {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.22);
+  }
+  .phone-wrap.selected .phone-shell {
+    border-color: #6366f1;
+  }
+
+  /* Variant A: Bauhaus Red */
+  .phone-red {
+    background: #f5f2ed;
+  }
+  .phone-red .top-bar {
+    background: #1a1a1a;
+    padding: 10px 16px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .phone-red .top-bar .wordmark {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #f5f2ed;
+    letter-spacing: 0.12em;
+  }
+  .phone-red .top-bar .session {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 300;
+    color: #c0392b;
+    letter-spacing: 0.08em;
+  }
+  .phone-red .accent-stripe {
+    height: 3px;
+    background: #c0392b;
+  }
+  .phone-red .body {
+    padding: 18px 16px;
+    position: relative;
+  }
+  .phone-red .status-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #c0392b;
+  }
+  .phone-red .big-status {
+    font-family: 'Syne', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.0;
+    margin: 4px 0 14px;
+  }
+  .phone-red .rule {
+    height: 1.5px;
+    background: #1a1a1a;
+    margin-bottom: 14px;
+  }
+  .phone-red .desc {
+    font-family: 'Barlow', sans-serif;
+    font-size: 9.5px;
+    font-weight: 300;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .phone-red .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .phone-red .stat-box {
+    background: #1a1a1a;
+    padding: 8px 10px;
+  }
+  .phone-red .stat-box .val {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #f5f2ed;
+    line-height: 1;
+  }
+  .phone-red .stat-box .key {
+    font-family: 'Barlow', sans-serif;
+    font-size: 7px;
+    font-weight: 400;
+    color: #888;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .phone-red .modality-bar {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #d8d4cf;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phone-red .mod-badge {
+    background: #c0392b;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    padding: 3px 7px;
+  }
+  .phone-red .mod-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 300;
+    color: #888;
+  }
+
+  /* Variant B: Navy Blue (academic) */
+  .phone-navy {
+    background: #f5f2ed;
+  }
+  .phone-navy .top-bar {
+    background: #1a1a1a;
+    padding: 10px 16px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .phone-navy .top-bar .wordmark {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #f5f2ed;
+    letter-spacing: 0.12em;
+  }
+  .phone-navy .top-bar .session {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 300;
+    color: #4a7fbf;
+    letter-spacing: 0.08em;
+  }
+  .phone-navy .accent-stripe {
+    height: 3px;
+    background: #1e4d8c;
+  }
+  .phone-navy .body {
+    padding: 18px 16px;
+  }
+  .phone-navy .status-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #1e4d8c;
+  }
+  .phone-navy .big-status {
+    font-family: 'Syne', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.0;
+    margin: 4px 0 14px;
+  }
+  .phone-navy .rule {
+    height: 1.5px;
+    background: #1a1a1a;
+    margin-bottom: 14px;
+  }
+  .phone-navy .desc {
+    font-family: 'Barlow', sans-serif;
+    font-size: 9.5px;
+    font-weight: 300;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .phone-navy .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .phone-navy .stat-box {
+    background: #1a1a1a;
+    padding: 8px 10px;
+  }
+  .phone-navy .stat-box .val {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #f5f2ed;
+    line-height: 1;
+  }
+  .phone-navy .stat-box .key {
+    font-family: 'Barlow', sans-serif;
+    font-size: 7px;
+    font-weight: 400;
+    color: #888;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .phone-navy .modality-bar {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #d8d4cf;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phone-navy .mod-badge {
+    background: #1e4d8c;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    padding: 3px 7px;
+  }
+  .phone-navy .mod-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 300;
+    color: #888;
+  }
+
+  /* Variant C: Black only — ultra-minimal */
+  .phone-mono {
+    background: #fff;
+  }
+  .phone-mono .top-bar {
+    background: #111;
+    padding: 10px 16px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .phone-mono .top-bar .wordmark {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.12em;
+  }
+  .phone-mono .top-bar .session {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 300;
+    color: #888;
+    letter-spacing: 0.08em;
+  }
+  .phone-mono .accent-stripe {
+    height: 3px;
+    background: #111;
+  }
+  .phone-mono .body {
+    padding: 18px 16px;
+  }
+  .phone-mono .status-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #111;
+    opacity: 0.5;
+  }
+  .phone-mono .big-status {
+    font-family: 'Syne', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: #111;
+    line-height: 1.0;
+    margin: 4px 0 14px;
+  }
+  .phone-mono .rule {
+    height: 1.5px;
+    background: #111;
+    margin-bottom: 14px;
+  }
+  .phone-mono .desc {
+    font-family: 'Barlow', sans-serif;
+    font-size: 9.5px;
+    font-weight: 300;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .phone-mono .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .phone-mono .stat-box {
+    border: 1.5px solid #111;
+    padding: 8px 10px;
+  }
+  .phone-mono .stat-box .val {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    line-height: 1;
+  }
+  .phone-mono .stat-box .key {
+    font-family: 'Barlow', sans-serif;
+    font-size: 7px;
+    font-weight: 400;
+    color: #888;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .phone-mono .modality-bar {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phone-mono .mod-badge {
+    background: #111;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    padding: 3px 7px;
+  }
+  .phone-mono .mod-label {
+    font-family: 'Barlow', sans-serif;
+    font-size: 8px;
+    font-weight: 300;
+    color: #aaa;
+  }
+
+  .phone-caption {
+    margin-top: 12px;
+    text-align: center;
+    max-width: 180px;
+  }
+  .phone-caption h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 3px;
+  }
+  .phone-caption p {
+    font-family: 'Barlow', sans-serif;
+    font-size: 10px;
+    font-weight: 300;
+    color: #888;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .phone-wrap.selected .phone-caption h3::after {
+    content: ' ✓';
+    color: #6366f1;
+  }
+</style>
+
+<h2>Accent Color</h2>
+<p class="subtitle">Same Swiss grid, same Syne + Barlow type system — three different accent colours. Which feels right for a research study?</p>
+
+<div class="phone-grid">
+
+  <!-- Red -->
+  <div class="phone-wrap" data-choice="red" onclick="toggleSelect(this)">
+    <div class="phone-shell phone-red">
+      <div class="top-bar">
+        <span class="wordmark">PATHSENSE</span>
+        <span class="session">HAPTIC</span>
+      </div>
+      <div class="accent-stripe"></div>
+      <div class="body">
+        <div class="status-label">Now Playing</div>
+        <div class="big-status">LEVEL<br>ONE</div>
+        <div class="rule"></div>
+        <div class="desc">Tilt with your non-dominant hand. Keep the ball on the path.</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="val">1:28</div>
+            <div class="key">Remaining</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">0</div>
+            <div class="key">Falls</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">3/4</div>
+            <div class="key">Checkpoints</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">300</div>
+            <div class="key">Score</div>
+          </div>
+        </div>
+        <div class="modality-bar">
+          <div class="mod-badge">HAPTIC</div>
+          <div class="mod-label">Proximity feedback: vibration</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-caption">
+      <h3>A — Bauhaus Red</h3>
+      <p>Bold, assertive. Classic Bauhaus palette. High contrast, energetic.</p>
+    </div>
+  </div>
+
+  <!-- Navy -->
+  <div class="phone-wrap" data-choice="navy" onclick="toggleSelect(this)">
+    <div class="phone-shell phone-navy">
+      <div class="top-bar">
+        <span class="wordmark">PATHSENSE</span>
+        <span class="session">HAPTIC</span>
+      </div>
+      <div class="accent-stripe"></div>
+      <div class="body">
+        <div class="status-label">Now Playing</div>
+        <div class="big-status">LEVEL<br>ONE</div>
+        <div class="rule"></div>
+        <div class="desc">Tilt with your non-dominant hand. Keep the ball on the path.</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="val">1:28</div>
+            <div class="key">Remaining</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">0</div>
+            <div class="key">Falls</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">3/4</div>
+            <div class="key">Checkpoints</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">300</div>
+            <div class="key">Score</div>
+          </div>
+        </div>
+        <div class="modality-bar">
+          <div class="mod-badge">HAPTIC</div>
+          <div class="mod-label">Proximity feedback: vibration</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-caption">
+      <h3>B — Academic Navy</h3>
+      <p>Authoritative, research-appropriate. Calm but structured.</p>
+    </div>
+  </div>
+
+  <!-- Monochrome -->
+  <div class="phone-wrap" data-choice="mono" onclick="toggleSelect(this)">
+    <div class="phone-shell phone-mono">
+      <div class="top-bar">
+        <span class="wordmark">PATHSENSE</span>
+        <span class="session">HAPTIC</span>
+      </div>
+      <div class="accent-stripe"></div>
+      <div class="body">
+        <div class="status-label">Now Playing</div>
+        <div class="big-status">LEVEL<br>ONE</div>
+        <div class="rule"></div>
+        <div class="desc">Tilt with your non-dominant hand. Keep the ball on the path.</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="val">1:28</div>
+            <div class="key">Remaining</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">0</div>
+            <div class="key">Falls</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">3/4</div>
+            <div class="key">Checkpoints</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">300</div>
+            <div class="key">Score</div>
+          </div>
+        </div>
+        <div class="modality-bar">
+          <div class="mod-badge">HAPTIC</div>
+          <div class="mod-label">Proximity feedback: vibration</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-caption">
+      <h3>C — Pure B&W</h3>
+      <p>Maximum restraint. Type and structure only. Nothing distracts.</p>
+    </div>
+  </div>
+
+</div>

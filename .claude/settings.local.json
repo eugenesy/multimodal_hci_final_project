@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(npm install *)",
+      "Bash(pkill -f \"node server.js\")",
+      "Bash(curl -sk https://localhost:3000/)",
+      "Bash(curl -sk https://localhost:3000/js/game.js)",
+      "Bash(xargs kill -9)",
+      "Bash(git -C /Users/syeugene/Documents/body-schema-hack log --oneline)",
+      "WebSearch",
+      "Read(//private/tmp/**)",
+      "Bash(unzip -o /Users/syeugene/Downloads/literature-review-helper.skill -d literature-review-helper-skill)",
+      "Read(//tmp/literature-review-helper-skill/literature-review-helper/**)",
+      "Read(//tmp/**)",
+      "mcp__claude_ai_Consensus__search",
+      "Bash(python3 *)",
+      "Bash(tectonic paper.tex)",
+      "Bash(tectonic --print paper.tex)",
+      "Bash(tectonic --keep-intermediates paper.tex)",
+      "Read(//Users/syeugene/Library/Caches/Tectonic/**)",
+      "Read(//Users/syeugene/.cache/**)",
+      "Bash(tectonic --keep-intermediates --keep-logs paper.tex)"
+    ]
+  }
+}
