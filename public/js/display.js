@@ -3,21 +3,28 @@
 // ─── State machine ────────────────────────────────────────────────────────────
 const STATE = {
   WAITING:       'WAITING',
+  CALIBRATING:   'CALIBRATING',
   ROUND_ACTIVE:  'ROUND_ACTIVE',
   ROUND_RESULTS: 'ROUND_RESULTS',
 };
 
+const LEVEL_META = {
+  1: { label: 'LEVEL 1', desc: 'Gentle S-curve · 90 s', name: 'LEVEL<br>ONE' },
+  2: { label: 'LEVEL 2', desc: 'N-shape · 75 s',        name: 'LEVEL<br>TWO' },
+  3: { label: 'LEVEL 3', desc: 'Tight zigzag · 60 s',   name: 'LEVEL<br>THREE' },
+};
+
 let currentState = STATE.WAITING;
-let players      = [];    // [{playerNum, playerName, color, modality, playCount, playerId}]
-let sessionId    = `S${Date.now()}`;
+let players      = [];
+let sessionId    = '';
 let roundResults = [];
 let currentRound = 0;
 let currentLevel = 1;
 
-let phaserGame       = null;
-let activeMazeScene  = null;
-let lbInterval       = null;
-let rrCountdownTimer = null;
+let phaserGame      = null;
+let activeMazeScene = null;
+let sbInterval      = null;
+let rrTimer         = null;
 
 // ─── Socket ───────────────────────────────────────────────────────────────────
 const socket = io({ query: { role: 'pc' } });
@@ -47,19 +54,27 @@ socket.on('GYRO_DATA', ({ gamma, beta, player }) => {
   if (activeMazeScene) activeMazeScene.setTilt(player, gamma, beta || 0);
 });
 
-
-// Admin triggers GAME_START → server forwards here
 socket.on('GAME_START', ({ level } = {}) => {
   currentRound++;
   currentLevel = Math.min(3, Math.max(1, Number(level) || 1));
-  _transitionTo(STATE.ROUND_ACTIVE);
+  _transitionTo(STATE.CALIBRATING);
   _destroyPhaser();
 
-  const playerList = players.map(p => ({ playerNum: p.playerNum, color: p.color, name: p.playerName }));
+  // Update level banner
+  const meta = LEVEL_META[currentLevel] || LEVEL_META[1];
+  const lbLevel = document.getElementById('lb-level');
+  const lbDesc  = document.getElementById('lb-desc');
+  if (lbLevel) lbLevel.textContent = meta.label;
+  if (lbDesc)  lbDesc.textContent  = meta.desc;
 
-  phaserGame = window.createPhaserGame('game-container', {
+  // Build Phaser with game paused, waiting for CALIBRATION_DONE
+  const p = players[0];
+  const playerList = players.map(pl => ({ playerNum: pl.playerNum, color: pl.color, name: pl.playerName }));
+
+  phaserGame = window.createPhaserGame('phaser-wrap', {
     players:           playerList,
     level:             currentLevel,
+    startPaused:       true,
     onWallHit:         _onWallHit,
     onGameEnd:         _onGameEnd,
     onProximityChange: _onProximityChange,
@@ -68,63 +83,90 @@ socket.on('GAME_START', ({ level } = {}) => {
   phaserGame.events.once('ready', () => {
     activeMazeScene = phaserGame.scene.getScene('MazeScene');
   });
+
+  // Update topbar for active session
+  const statusTag  = document.getElementById('display-status-tag');
+  const phaseBadge = document.getElementById('display-phase-badge');
+  if (statusTag)  statusTag.textContent  = p ? `${p.playerName} · ${(p.modality || '').toUpperCase()}` : '';
+  if (phaseBadge) { phaseBadge.textContent = 'GAME'; phaseBadge.style.background = 'var(--red)'; phaseBadge.style.color = '#fff'; }
+});
+
+socket.on('CALIBRATION_DONE', () => {
+  if (activeMazeScene) activeMazeScene.setPaused(false);
+  _transitionTo(STATE.ROUND_ACTIVE);
 });
 
 // ─── State helpers ────────────────────────────────────────────────────────────
 function _transitionTo(state) {
   console.log(`[Display] ${currentState} → ${state}`);
   currentState = state;
-  document.querySelectorAll('.view, #game-container').forEach(el => el.classList.remove('active'));
-  const map = {
-    [STATE.WAITING]:       'view-waiting',
-    [STATE.ROUND_ACTIVE]:  'game-container',
-    [STATE.ROUND_RESULTS]: 'view-round-results',
-  };
-  document.getElementById(map[state])?.classList.add('active');
 
-  const lb = document.getElementById('live-lb');
-  if (state === STATE.ROUND_ACTIVE) {
-    lb?.classList.add('visible');
-    lbInterval = setInterval(_updateLiveLb, 500);
-  } else {
-    lb?.classList.remove('visible');
-    clearInterval(lbInterval); lbInterval = null;
+  // Hide all views
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  // Hide level banner by default
+  const banner = document.getElementById('level-banner');
+  if (banner) banner.classList.remove('active');
+
+  if (state === STATE.WAITING || state === STATE.CALIBRATING) {
+    document.getElementById('view-waiting')?.classList.add('active');
+    clearInterval(sbInterval); sbInterval = null;
+  } else if (state === STATE.ROUND_ACTIVE) {
+    document.getElementById('view-game')?.classList.add('active');
+    if (banner) banner.classList.add('active');
+    // Poll sidebar every 500ms
+    sbInterval = setInterval(_updateSidebar, 500);
+  } else if (state === STATE.ROUND_RESULTS) {
+    document.getElementById('view-results')?.classList.add('active');
+    clearInterval(sbInterval); sbInterval = null;
   }
 }
 
 // ─── Waiting screen ───────────────────────────────────────────────────────────
 function _renderWaiting() {
-  const dots  = document.getElementById('waiting-player-dots');
-  const count = document.getElementById('waiting-player-count');
-  if (!dots) return;
+  const playerWrap = document.getElementById('waiting-player');
+  const dotLabel   = document.getElementById('waiting-dot-label');
+  const playerName = document.getElementById('waiting-player-name');
+  const playerMod  = document.getElementById('waiting-player-mod');
+  const statusTag  = document.getElementById('display-status-tag');
+  const phaseBadge = document.getElementById('display-phase-badge');
 
-  dots.innerHTML = '';
-  players.forEach(p => {
-    const wrap = document.createElement('div');
-    wrap.className = 'waiting-dot-wrap';
-    const dot = document.createElement('div');
-    dot.className = 'waiting-dot';
-    dot.style.background  = p.color;
-    dot.style.boxShadow   = `0 0 16px ${p.color}66`;
-    const lbl = document.createElement('div');
-    lbl.className    = 'waiting-dot-label';
-    lbl.style.color  = p.color;
-    lbl.textContent  = _esc(p.playerName.slice(0, 10));
-    wrap.appendChild(dot);
-    wrap.appendChild(lbl);
-    dots.appendChild(wrap);
-  });
+  if (phaseBadge) { phaseBadge.textContent = 'LOBBY'; phaseBadge.style.background = 'var(--rule)'; phaseBadge.style.color = 'var(--black)'; }
 
-  if (count) count.textContent = players.length
-    ? `${players.length} player${players.length > 1 ? 's' : ''} connected`
-    : 'Waiting for players to scan the QR code…';
+  const ml = { haptic: '📳 HAPTIC', audio: '🔊 AUDIO', none: '— NONE' };
+
+  if (!players.length) {
+    if (statusTag)  statusTag.textContent  = 'WAITING FOR PARTICIPANT';
+    if (playerWrap) playerWrap.style.display = 'none';
+    return;
+  }
+
+  const p = players[0];
+  if (statusTag)   statusTag.textContent = `${p.playerName} · ${(p.modality || '').toUpperCase()}`;
+  if (playerWrap)  playerWrap.style.display = 'flex';
+  if (dotLabel)    dotLabel.textContent    = `P${p.playerNum}`;
+  if (playerName)  playerName.textContent  = p.playerName;
+  if (playerMod)   playerMod.textContent   = `${ml[p.modality] || ''} · Session ${(p.playCount || 0) + 1}`;
+}
+
+// ─── Sidebar polling ──────────────────────────────────────────────────────────
+function _updateSidebar() {
+  if (!activeMazeScene) return;
+  const stats = activeMazeScene.getStats();
+  const p     = players[0];
+  if (!p) return;
+  const s = stats[p.playerNum];
+  if (!s) return;
+
+  const sbFalls = document.getElementById('sb-falls');
+  const sbCp    = document.getElementById('sb-checkpoints');
+  if (sbFalls) sbFalls.textContent = s.falls;
+  if (sbCp)    sbCp.textContent    = s.checkpoints;
 }
 
 // ─── Callbacks from game ──────────────────────────────────────────────────────
 function _onWallHit(playerNum) {
   socket.emit('FEEDBACK_EVENT', { playerNum, feedbackType: 'wall_hit' });
 }
-
 
 function _onProximityChange(playerNum, level) {
   socket.emit('PROXIMITY_UPDATE', { playerNum, level });
@@ -140,125 +182,74 @@ function _onGameEnd({ rankings, round_duration_ms }) {
 
   _transitionTo(STATE.ROUND_RESULTS);
   _renderRoundResults(result);
-
-  let secs = currentLevel < 3 ? 20 : 30;
-  const cd = document.getElementById('rr-countdown');
-  rrCountdownTimer = setInterval(() => {
-    secs--;
-    if (secs > 0 && cd) {
-      cd.textContent = currentLevel < 3
-        ? `Ready for Level ${currentLevel + 1} — returning in ${secs}s`
-        : `Session complete — returning in ${secs}s`;
-    }
-    if (secs <= 0) { clearInterval(rrCountdownTimer); _backToWaiting(); }
-  }, 1000);
 }
 
 function _exportRoundCsv({ round, level, round_duration_ms, rankings, playerSnapshot }) {
   const ts = new Date().toISOString();
-  rankings.forEach((entry) => {
+  rankings.forEach(entry => {
     const p = playerSnapshot.find(pl => pl.playerNum === entry.playerNum);
     if (!p) return;
     socket.emit('EXPORT_RESULTS', {
-      session_id:          sessionId,
+      session_id:         sessionId,
       round,
-      difficulty_level:    level,
-      round_duration_ms:   round_duration_ms || 0,
-      player_id:           p.playerId   || '',
-      player_name:         p.playerName || '',
-      modality:            p.modality   || 'none',
-      checkpoints_passed:  entry.checkpoints || 0,
-      falls:               entry.falls       || 0,
-      score:               entry.score,
-      time_at_level_1_ms:  entry.time_at_level_1_ms || 0,
-      time_at_level_2_ms:  entry.time_at_level_2_ms || 0,
-      time_at_level_3_ms:  entry.time_at_level_3_ms || 0,
-      session_timestamp:   ts,
+      difficulty_level:   level,
+      round_duration_ms:  round_duration_ms || 0,
+      player_id:          p.playerId   || '',
+      player_name:        p.playerName || '',
+      modality:           p.modality   || 'none',
+      checkpoints_passed: entry.checkpoints || 0,
+      falls:              entry.falls        || 0,
+      score:              entry.score        || 0,
+      time_at_level_1_ms: entry.time_at_level_1_ms || 0,
+      time_at_level_2_ms: entry.time_at_level_2_ms || 0,
+      time_at_level_3_ms: entry.time_at_level_3_ms || 0,
+      session_timestamp:  ts,
     });
   });
 }
 
-// ─── Round results ────────────────────────────────────────────────────────────
-function _renderRoundResults({ level, rankings, playerSnapshot }) {
-  const title = document.getElementById('rr-title');
-  const levelLabel = level < 3 ? `Level ${level} Complete` : 'All Levels Complete';
-  if (title) title.textContent = levelLabel;
-
-  const tbody = document.getElementById('rr-rankings');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  if (!rankings.length) return;
+// ─── Round results screen ─────────────────────────────────────────────────────
+function _renderRoundResults({ level, round_duration_ms, rankings, playerSnapshot }) {
+  const meta  = LEVEL_META[level] || LEVEL_META[1];
   const entry = rankings[0];
-  const p     = playerSnapshot.find(pl => pl.playerNum === entry.playerNum);
-  const color = p?.color || '#00cfff';
-  const name  = _esc(p?.playerName || 'Player');
+  const p     = playerSnapshot.find(pl => pl.playerNum === entry?.playerNum);
   const ml    = { haptic: '📳 Haptic', audio: '🔊 Audio', none: '— None' };
+  const fmt   = ms => `${(ms / 1000).toFixed(0)}s`;
 
-  const fmt = ms => `${(ms / 1000).toFixed(1)}s`;
+  document.getElementById('res-title').innerHTML     = meta.name;
+  document.getElementById('res-player').textContent  = p?.playerName || '—';
+  document.getElementById('res-modality').textContent = ml[p?.modality] || '—';
+  document.getElementById('rstat-falls').textContent        = entry?.falls ?? 0;
+  document.getElementById('rstat-checkpoints').textContent  = entry ? `${entry.checkpoints}/${entry.totalCheckpoints}` : '—';
+  document.getElementById('rstat-duration').textContent     = fmt(round_duration_ms || 0);
+  document.getElementById('rstat-near').textContent         = fmt(entry?.time_at_level_2_ms || 0);
 
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="2" style="color:${color};font-size:1.4em;font-weight:bold;padding-bottom:8px">${name}</td>
-    </tr>
-    <tr>
-      <td class="rr-unit">Score</td>
-      <td style="color:${color};font-weight:bold">${entry.score} pts</td>
-    </tr>
-    <tr>
-      <td class="rr-unit">Checkpoints</td>
-      <td>${entry.checkpoints} / ${entry.totalCheckpoints || '?'}</td>
-    </tr>
-    <tr>
-      <td class="rr-unit">Falls</td>
-      <td>${entry.falls}</td>
-    </tr>
-    <tr>
-      <td class="rr-unit">Feedback</td>
-      <td>${ml[p?.modality] || '—'}</td>
-    </tr>
-    <tr><td colspan="2" style="padding-top:10px;color:#555;font-size:0.8em">Proximity exposure</td></tr>
-    <tr>
-      <td class="rr-unit">Near (L1)</td>
-      <td>${fmt(entry.time_at_level_1_ms)}</td>
-    </tr>
-    <tr>
-      <td class="rr-unit">Warn (L2)</td>
-      <td>${fmt(entry.time_at_level_2_ms)}</td>
-    </tr>
-    <tr>
-      <td class="rr-unit">Danger (L3)</td>
-      <td>${fmt(entry.time_at_level_3_ms)}</td>
-    </tr>`;
+  const nextTxt = document.getElementById('res-next-txt');
+  const cd      = document.getElementById('res-countdown');
+  if (level < 3) {
+    if (nextTxt) nextTxt.textContent = `NEXT → LEVEL ${level + 1}`;
+  } else {
+    if (nextTxt) nextTxt.textContent = 'SESSION COMPLETE';
+  }
 
-  const cd = document.getElementById('rr-countdown');
-  if (cd) cd.textContent = level < 3 ? `Ready for Level ${level + 1}` : 'Session complete — returning…';
+  let secs = level < 3 ? 20 : 30;
+  if (cd) cd.textContent = `Continuing in ${secs}s…`;
+
+  rrTimer = setInterval(() => {
+    secs--;
+    if (secs > 0 && cd) cd.textContent = `Continuing in ${secs}s…`;
+    if (secs <= 0) {
+      clearInterval(rrTimer);
+      _backToWaiting();
+    }
+  }, 1000);
 }
 
 function _backToWaiting() {
-  clearInterval(rrCountdownTimer);
+  clearInterval(rrTimer);
   _destroyPhaser();
   _renderWaiting();
   _transitionTo(STATE.WAITING);
-}
-
-// ─── Live score HUD ───────────────────────────────────────────────────────────
-function _updateLiveLb() {
-  if (!activeMazeScene) return;
-  const stats  = activeMazeScene.getStats();
-  const lbList = document.getElementById('live-lb-list');
-  if (!lbList) return;
-
-  const p = players[0];
-  const s = p ? stats[p.playerNum] : null;
-  if (!s) { lbList.innerHTML = ''; return; }
-
-  const color = p?.color || '#00cfff';
-  lbList.innerHTML =
-    `<div class="lb-row" style="color:${color}">` +
-      `${_esc((p?.playerName || 'Player').slice(0, 9))}: ${s.score} pts` +
-      ` &nbsp;· Falls: ${s.falls}` +
-    `</div>`;
 }
 
 // ─── Notification toast ───────────────────────────────────────────────────────
@@ -266,7 +257,7 @@ function _showNotification(msg, color) {
   const el = document.getElementById('notification');
   if (!el) return;
   el.textContent       = msg;
-  el.style.borderColor = color || '#555';
+  el.style.borderColor = color || 'var(--red)';
   el.style.display     = 'block';
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.style.display = 'none'; }, 3000);
@@ -274,6 +265,7 @@ function _showNotification(msg, color) {
 
 // ─── Phaser lifecycle ─────────────────────────────────────────────────────────
 function _destroyPhaser() {
+  clearInterval(sbInterval); sbInterval = null;
   if (phaserGame) { phaserGame.destroy(true); phaserGame = null; }
   activeMazeScene = null;
 }
@@ -285,5 +277,5 @@ function _esc(str) {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (function init() {
   _renderWaiting();
-  console.log('[Display] Ready — waiting for admin to start game');
+  console.log('[Display] Ready — waiting for admin to start');
 })();

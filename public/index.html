@@ -3,191 +3,329 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Body Dodge — Display</title>
+  <title>PathSense — Display</title>
+  <link rel="stylesheet" href="/css/bauhaus.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: var(--cream); color: var(--black); overflow: hidden; }
+    body { font-family: 'Barlow', sans-serif; display: flex; flex-direction: column; }
 
-    body {
-      background: #0a0a0f; color: #e0e0e0;
-      font-family: 'Courier New', monospace;
-      height: 100vh; overflow: hidden;
+    /* ── Top bar ── */
+    #display-topbar {
+      background: var(--black);
+      padding: 9px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
     }
-
-    /* ── Views ──────────────────────────────────────────────── */
-    .view, #game-container {
-      display: none; width: 100%; height: 100vh;
+    #display-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--cream);
+      letter-spacing: 0.18em;
     }
-    .view.active, #game-container.active { display: flex; }
+    #display-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+    }
+    #display-status-tag { color: var(--red); }
 
-    /* ── Waiting screen ─────────────────────────────────────── */
+    /* ── Views ── */
+    .view { display: none; flex: 1; overflow: hidden; }
+    .view.active { display: flex; }
+
+    /* ── Waiting ── */
     #view-waiting {
-      flex-direction: column; align-items: center; justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+      position: relative;
+      overflow: hidden;
+    }
+    #waiting-grid {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    #waiting-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(40px, 6vw, 80px);
+      font-weight: 800;
+      color: var(--black);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      position: relative; z-index: 1;
+    }
+    #waiting-red-rule {
+      width: 48px; height: 3px; background: var(--red);
+      margin: 12px 0; position: relative; z-index: 1;
+    }
+    #waiting-sub {
+      font-family: 'Barlow', sans-serif;
+      font-size: 10px; font-weight: 300;
+      color: #bbb; letter-spacing: 0.12em;
+      text-transform: uppercase;
+      position: relative; z-index: 1;
+      margin-bottom: 28px;
+    }
+    #waiting-player {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 6px;
+    }
+    #waiting-dot {
+      width: 56px; height: 56px; background: var(--red); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #waiting-dot-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px; font-weight: 800; color: #fff; letter-spacing: 0.1em;
+    }
+    #waiting-player-name {
+      font-family: 'Barlow', sans-serif;
+      font-size: 12px; font-weight: 400; color: var(--black); letter-spacing: 0.06em;
+    }
+    #waiting-player-mod {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px; color: var(--gray); margin-top: -2px;
+    }
+
+    /* ── Level banner ── */
+    #level-banner {
+      background: var(--red);
+      padding: 5px 20px;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    #level-banner.active { display: flex; }
+    .lb-txt {
+      font-family: 'Syne', sans-serif;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.16em; color: #fff;
+    }
+    .lb-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.3); }
+
+    /* ── Active round layout ── */
+    #view-game {
+      flex-direction: row;
+    }
+    #phaser-wrap {
+      flex: 1;
+      background: var(--dark);
+      position: relative;
+      overflow: hidden;
+    }
+    #game-sidebar {
+      width: 130px;
+      background: var(--cream);
+      border-left: 1.5px solid var(--rule);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .gs-title {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 10px;
+    }
+    .gs-stat {
+      border-top: 1px solid var(--rule);
+      padding: 10px 0;
+    }
+    .gs-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px; font-weight: 800;
+      color: var(--black); line-height: 1;
+    }
+    .gs-key {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7px; color: var(--gray);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* ── Round results ── */
+    #view-results {
+      background: var(--cream);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 40px 60px;
       gap: 48px;
     }
-
-    .waiting-wordmark {
-      font-size: 11px; letter-spacing: 6px; color: #666;
-      text-transform: uppercase;
+    #res-eyebrow {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 8px;
+    }
+    #res-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(32px, 4vw, 56px);
+      font-weight: 800; color: var(--black);
+      line-height: 1; margin-bottom: 12px;
+    }
+    #res-rule { height: 1.5px; background: var(--black); width: 48px; margin-bottom: 14px; }
+    #res-player {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px; font-weight: 700;
+      color: var(--red); margin-bottom: 4px;
+    }
+    #res-modality {
+      font-family: 'Barlow', sans-serif;
+      font-size: 10px; font-weight: 300; color: var(--gray);
+    }
+    #res-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-content: start;
+    }
+    .res-stat-box { border: 1.5px solid var(--rule); padding: 12px 14px; }
+    .res-stat-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px; font-weight: 800;
+      color: var(--black); line-height: 1;
+    }
+    .res-stat-val.red { color: var(--red); }
+    .res-stat-key {
+      font-family: 'Barlow', sans-serif;
+      font-size: 8px; color: var(--gray);
+      letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
+    }
+    #res-next {
+      grid-column: 1 / -1;
+      background: var(--black);
+      padding: 11px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #res-next-txt {
+      font-family: 'Syne', sans-serif;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.12em; color: var(--cream);
+    }
+    #res-countdown {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px; font-weight: 300; color: var(--gray);
     }
 
-    .waiting-title {
-      font-size: clamp(36px, 5vw, 72px);
-      font-weight: bold; letter-spacing: 8px; text-transform: uppercase;
-      color: #e0e0e0;
-      text-shadow: 0 0 40px rgba(0,207,255,0.15);
-    }
-
-    .waiting-title span {
-      color: #00cfff;
-      text-shadow: 0 0 30px #00cfff88;
-    }
-
-    #waiting-player-count {
-      font-size: 13px; letter-spacing: 3px; color: #aaa;
-      text-transform: uppercase;
-    }
-
-    #waiting-player-dots {
-      display: flex; gap: 32px; align-items: flex-end;
-      min-height: 90px; flex-wrap: wrap; justify-content: center;
-      max-width: 800px;
-    }
-
-    .waiting-dot-wrap {
-      display: flex; flex-direction: column;
-      align-items: center; gap: 10px;
-    }
-
-    .waiting-dot {
-      width: 48px; height: 48px; border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1);    opacity: 1; }
-      50%       { transform: scale(1.12); opacity: 0.8; }
-    }
-
-    .waiting-dot-label {
-      font-size: 12px; letter-spacing: 2px; font-weight: bold;
-      text-transform: uppercase;
-    }
-
-    .waiting-hint {
-      font-size: 11px; color: #555; letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    /* ── Game container ─────────────────────────────────────── */
-    #game-container {
-      position: relative; background: #000;
-      justify-content: center; align-items: center;
-    }
-
-    /* ── Live leaderboard overlay ───────────────────────────── */
-    #live-lb {
-      display: none; position: fixed; top: 12px; right: 12px;
-      background: rgba(10,10,15,0.88); border: 1px solid #1e1e2e;
-      border-radius: 10px; padding: 10px 14px; min-width: 160px;
-      z-index: 200; backdrop-filter: blur(4px);
-    }
-    #live-lb.visible { display: block; }
-    #live-lb-title {
-      font-size: 9px; letter-spacing: 3px; color: #aaa;
-      text-transform: uppercase; margin-bottom: 6px;
-    }
-    .lb-row {
-      font-size: 13px; font-weight: bold; letter-spacing: 1px;
-      padding: 2px 0;
-    }
-
-    /* ── Round results ──────────────────────────────────────── */
-    #view-round-results {
-      flex-direction: column; align-items: center; justify-content: center;
-      gap: 32px; padding: 40px;
-    }
-
-    #rr-title {
-      font-size: clamp(28px, 4vw, 52px);
-      font-weight: bold; letter-spacing: 6px;
-      text-transform: uppercase; color: #00ff88;
-      text-shadow: 0 0 30px #00ff8866;
-    }
-
-    #rr-table {
-      width: 100%; max-width: 700px; border-collapse: collapse;
-    }
-    #rr-table th {
-      font-size: 10px; letter-spacing: 3px; color: #888;
-      text-transform: uppercase; padding: 8px 16px;
-      border-bottom: 1px solid #222; text-align: left;
-    }
-    #rr-table td {
-      padding: 14px 16px;
-      font-size: clamp(16px, 2vw, 22px);
-      letter-spacing: 1px;
-      border-bottom: 1px solid #0d0d14;
-    }
-    .rr-rank  { font-size: 22px !important; width: 48px; }
-    .rr-unit  { font-size: 11px; color: #888; }
-
-    #rr-countdown {
-      font-size: 12px; color: #888; letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    /* ── Notification toast ─────────────────────────────────── */
+    /* ── Toast ── */
     #notification {
       display: none; position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%); background: #0f0f18;
-      border: 1px solid #333; border-radius: 10px;
-      padding: 12px 24px; font-size: 14px; letter-spacing: 1px;
+      transform: translateX(-50%); background: var(--black);
+      color: var(--cream); border: 1px solid var(--red);
+      padding: 10px 22px; font-family: 'Barlow', sans-serif;
+      font-size: 12px; letter-spacing: 0.06em;
       z-index: 500; pointer-events: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- ══ Waiting ════════════════════════════════════════════════════════════ -->
+  <!-- ══ Top bar ═══════════════════════════════════════════════════════════════ -->
+  <div id="display-topbar">
+    <div id="display-wordmark">PATHSENSE</div>
+    <div id="display-topbar-right">
+      <span id="display-status-tag">WAITING FOR PARTICIPANT</span>
+      <span id="display-phase-badge" style="
+        font-family:'Syne',sans-serif;font-size:8px;font-weight:700;
+        letter-spacing:0.14em;padding:3px 10px;
+        background:var(--rule);color:var(--black);">LOBBY</span>
+    </div>
+  </div>
+  <div class="bh-red-stripe"></div>
+
+  <!-- Level banner (shown during active round, hidden otherwise) -->
+  <div id="level-banner">
+    <span class="lb-txt" id="lb-level">LEVEL 1</span>
+    <div class="lb-sep"></div>
+    <span class="lb-txt" id="lb-desc" style="font-weight:400;letter-spacing:0.1em;opacity:0.8">
+      Gentle S-curve · 90 s
+    </span>
+  </div>
+
+  <!-- ══ Views ══════════════════════════════════════════════════════════════════ -->
+
+  <!-- Waiting -->
   <div id="view-waiting" class="view active">
-    <div class="waiting-wordmark">Body Schema Hack</div>
-    <div class="waiting-title">BODY<span>DODGE</span></div>
-    <div id="waiting-player-count">Waiting for players…</div>
-    <div id="waiting-player-dots"></div>
-    <div class="waiting-hint">Researcher controls the game from the admin panel</div>
+    <svg id="waiting-grid" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="25%" y1="0" x2="25%" y2="100%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="75%" y1="0" x2="75%" y2="100%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="0" y1="33%" x2="100%" y2="33%" stroke="#d0ccc6" stroke-width="0.5"/>
+      <line x1="0" y1="66%" x2="100%" y2="66%" stroke="#d0ccc6" stroke-width="0.5"/>
+    </svg>
+    <div id="waiting-title">PATHSENSE</div>
+    <div id="waiting-red-rule"></div>
+    <div id="waiting-sub">Tilt-controlled tightrope · Non-dominant hand study</div>
+    <div id="waiting-player" style="display:none">
+      <div id="waiting-dot"><div id="waiting-dot-label">P1</div></div>
+      <div id="waiting-player-name"></div>
+      <div id="waiting-player-mod"></div>
+    </div>
   </div>
 
-  <!-- ══ Game ═══════════════════════════════════════════════════════════════ -->
-  <div id="game-container"></div>
-
-  <!-- ══ Live leaderboard overlay ══════════════════════════════════════════ -->
-  <div id="live-lb">
-    <div id="live-lb-title">Live</div>
-    <div id="live-lb-list"></div>
+  <!-- Active game (Phaser canvas + sidebar) -->
+  <div id="view-game" class="view">
+    <div id="phaser-wrap"></div>
+    <div id="game-sidebar">
+      <div class="gs-title">Live Stats</div>
+      <div class="gs-stat">
+        <div class="gs-val" id="sb-falls">0</div>
+        <div class="gs-key">Falls</div>
+      </div>
+      <div class="gs-stat">
+        <div class="gs-val" id="sb-checkpoints">—</div>
+        <div class="gs-key">Checkpoints</div>
+      </div>
+    </div>
   </div>
 
-  <!-- ══ Round results ══════════════════════════════════════════════════════ -->
-  <div id="view-round-results" class="view">
-    <div id="rr-title">Round Complete</div>
-
-    <table id="rr-table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Player</th>
-          <th>Score</th>
-          <th>Gems</th>
-          <th>Wall Hits</th>
-          <th>Mode</th>
-        </tr>
-      </thead>
-      <tbody id="rr-rankings"></tbody>
-    </table>
-
-    <div id="rr-countdown">Returning in 15s</div>
+  <!-- Round results -->
+  <div id="view-results" class="view">
+    <div id="res-left">
+      <div id="res-eyebrow">Round Complete</div>
+      <div id="res-title">LEVEL<br>ONE</div>
+      <div id="res-rule"></div>
+      <div id="res-player">—</div>
+      <div id="res-modality"></div>
+    </div>
+    <div id="res-stats">
+      <div class="res-stat-box">
+        <div class="res-stat-val red" id="rstat-falls">0</div>
+        <div class="res-stat-key">Falls</div>
+      </div>
+      <div class="res-stat-box">
+        <div class="res-stat-val" id="rstat-checkpoints">—</div>
+        <div class="res-stat-key">Checkpoints</div>
+      </div>
+      <div class="res-stat-box">
+        <div class="res-stat-val" id="rstat-duration">—</div>
+        <div class="res-stat-key">Duration</div>
+      </div>
+      <div class="res-stat-box">
+        <div class="res-stat-val" id="rstat-near">—</div>
+        <div class="res-stat-key">Time Near Edge</div>
+      </div>
+      <div id="res-next">
+        <div id="res-next-txt">NEXT → LEVEL 2</div>
+        <div id="res-countdown">Continuing in 20s…</div>
+      </div>
+    </div>
   </div>
 
-  <!-- ══ Toast ══════════════════════════════════════════════════════════════ -->
+  <!-- ══ Toast ══════════════════════════════════════════════════════════════════ -->
   <div id="notification"></div>
 
   <script src="/socket.io/socket.io.js"></script>
