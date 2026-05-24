@@ -1,0 +1,117 @@
+/* PathSense — Bauhaus Design System */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@600;700&display=swap');
+
+:root {
+  --cream:  #f5f2ed;
+  --black:  #1a1a1a;
+  --red:    #c0392b;
+  --rule:   #d0ccc6;
+  --gray:   #888888;
+  --dark:   #111111;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.bh-wordmark {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.bh-eyebrow {
+  font-family: 'Barlow', sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.bh-rule        { height: 1.5px; background: var(--black); }
+.bh-thin-rule   { height: 1px;   background: var(--rule); }
+.bh-red-stripe  { height: 3px;   background: var(--red); }
+.bh-topbar {
+  background: var(--black);
+  padding: 9px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bh-badge {
+  font-family: 'Syne', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  color: #fff;
+}
+.bh-badge-lobby { background: var(--rule);  color: var(--black); }
+.bh-badge-game  { background: var(--red); }
+.bh-btn-primary {
+  display: block;
+  width: 100%;
+  background: var(--black);
+  color: var(--cream);
+  font-family: 'Syne', sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 11px;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+.bh-btn-secondary {
+  display: block;
+  width: 100%;
+  background: transparent;
+  color: var(--gray);
+  font-family: 'Syne', sans-serif;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 9px;
+  text-align: center;
+  border: 1px solid var(--rule);
+  cursor: pointer;
+}
+.bh-chip {
+  border: 1px solid var(--rule);
+  padding: 4px 9px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 8px;
+  color: var(--gray);
+  cursor: pointer;
+  background: transparent;
+  user-select: none;
+}
+.bh-chip.sel {
+  border-color: var(--black);
+  background: var(--black);
+  color: var(--cream);
+}
+.bh-input {
+  width: 100%;
+  border: 1.5px solid var(--black);
+  background: transparent;
+  padding: 8px 10px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 10px;
+  color: var(--black);
+  outline: none;
+}
+.bh-input::placeholder { color: var(--rule); }
+.bh-field-label {
+  font-family: 'Barlow', sans-serif;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--black);
+  display: block;
+  margin-bottom: 4px;
+  margin-top: 10px;
+}
+.bh-chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
