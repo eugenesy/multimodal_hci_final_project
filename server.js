@@ -107,6 +107,7 @@ function playersList() {
     modality:   p.modality,
     playCount:  p.playCount,
     playerId:   p.playerId,
+    handedness: p.handedness || '',
   }));
 }
 
@@ -329,6 +330,11 @@ function handleControllerConnection(socket) {
   const playerId   = q.playerId   || `anon_${socket.id}`;
   const playerName = (q.playerName || 'Player').slice(0, 20);
   const canVibrate = q.canVibrate === 'true';
+  const handedness        = q.handedness        || '';
+  const gaming_experience = q.gaming_experience || '';
+  const tilt_experience   = q.tilt_experience   || '';
+  const age               = q.age               || '';
+  const gender            = q.gender            || '';
   const history    = getOrInitHistory(playerId);
 
   const playerNum = assignPlayerNum();
@@ -350,6 +356,11 @@ function handleControllerConnection(socket) {
     modality,
     color,
     playCount:  history.playCount,
+    handedness,
+    gaming_experience,
+    tilt_experience,
+    age,
+    gender,
     deviceInfo: {
       os:           q.os           || '',
       os_version:   q.os_version   || '',
@@ -374,6 +385,11 @@ function handleControllerConnection(socket) {
   });
 
   socket.on('PING', () => socket.emit('PONG', {}));
+
+  socket.on('CALIBRATION_DONE', () => {
+    if (pcSocket) pcSocket.emit('CALIBRATION_DONE', {});
+    console.log(`[Controller] P${playerNum} calibration done`);
+  });
 
   socket.on('SURVEY_RESPONSE', (payload) => {
     const { response, playerNum, modality, timestamp, play_count, demographics } = payload || {};
