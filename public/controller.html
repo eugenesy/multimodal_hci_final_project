@@ -3,301 +3,353 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Controller — Body Schema Hack</title>
+  <title>PathSense — Controller</title>
+  <link rel="stylesheet" href="/css/bauhaus.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0a0a0f; color: #e0e0e0;
-      font-family: 'Courier New', monospace;
-      height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      overflow: hidden; user-select: none; -webkit-user-select: none;
-    }
-    #status-icon {
-      font-size: 72px; font-weight: bold; margin-bottom: 18px;
-      letter-spacing: -2px; transition: all 0.4s ease;
-    }
-    #status-label {
-      font-size: 26px; font-weight: bold; letter-spacing: 4px;
-      text-transform: uppercase; margin-bottom: 14px;
-    }
-    #status-sub { font-size: 13px; color: #888; letter-spacing: 2px; text-transform: uppercase; }
+    html, body { height: 100%; background: var(--cream); color: var(--black); overflow: hidden; }
+    body { font-family: 'Barlow', sans-serif; }
 
+    /* ── Screen shell ── */
+    .screen {
+      display: none;
+      position: fixed; inset: 0;
+      flex-direction: column;
+      background: var(--cream);
+      overflow-y: auto;
+    }
+    .screen.active { display: flex; }
+
+    /* ── Top bar (shared) ── */
+    .ctrl-topbar {
+      background: var(--black);
+      padding: 9px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .ctrl-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      color: var(--cream);
+    }
+    .ctrl-session {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7.5px;
+      font-weight: 300;
+      color: var(--red);
+      letter-spacing: 0.08em;
+    }
+    .ctrl-body { padding: 16px 14px 24px; flex: 1; }
+    .ctrl-headline {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      color: var(--black);
+      line-height: 1.0;
+      font-size: 28px;
+      margin: 6px 0 12px;
+    }
+    .ctrl-sub {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px;
+      font-weight: 300;
+      color: #666;
+      line-height: 1.6;
+    }
+    .ctrl-badge {
+      display: inline-block;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      padding: 3px 8px;
+    }
+
+    /* ── Calibration center ── */
+    .calib-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px 20px;
+    }
+    .calib-icon {
+      width: 64px; height: 64px;
+      border: 2.5px solid var(--black);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .calib-icon svg { width: 32px; height: 32px; }
+
+    /* ── Survey ── */
+    .survey-textarea {
+      width: 100%;
+      min-height: 100px;
+      border: 1.5px solid var(--rule);
+      background: #fff;
+      padding: 10px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px;
+      line-height: 1.6;
+      color: var(--black);
+      resize: none;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .survey-textarea:focus { border-color: var(--black); }
+    .survey-textarea::placeholder { color: var(--rule); }
+
+    /* ── Thanks ── */
+    .thanks-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    /* ── Error ── */
+    #error-msg {
+      display: none;
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--red);
+      color: #fff;
+      font-family: 'Barlow', sans-serif;
+      font-size: 10px;
+      padding: 8px 16px;
+      z-index: 999;
+    }
+
+    /* ── Debug panel ── */
     #debug-panel {
-      display: none; position: fixed; bottom: 20px; left: 50%;
-      transform: translateX(-50%); background: rgba(0,0,0,0.75);
-      border: 1px solid #333; border-radius: 8px; padding: 10px 20px;
-      font-size: 12px; color: #888; text-align: center; min-width: 160px;
+      display: none;
+      position: fixed; bottom: 12px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26,26,26,0.88);
+      padding: 6px 14px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 10px;
+      color: var(--cream);
+      z-index: 999;
     }
-    #debug-gamma, #debug-beta { font-size: 15px; font-weight: bold; color: #00cfff; }
-
-    #permission-overlay {
-      display: none; position: fixed; inset: 0; background: #0a0a0f;
-      flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 40px; z-index: 100;
-    }
-    #permission-overlay.visible { display: flex; }
-    #permission-btn {
-      margin-top: 28px; padding: 18px 44px; background: #00ff88; color: #0a0a0f;
-      border: none; border-radius: 12px; font-family: 'Courier New', monospace;
-      font-size: 18px; font-weight: bold; letter-spacing: 2px; cursor: pointer;
-      text-transform: uppercase;
-    }
-    #permission-btn:active { opacity: 0.8; }
-    #error-msg { display: none; color: #ff4444; text-align: center; padding: 20px; font-size: 15px; line-height: 1.7; }
-
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .pulsing { animation: pulse 1.2s ease-in-out infinite; }
-
-    /* Tilt indicator — shows live tilt as a small level bubble */
-    #tilt-indicator {
-      margin-top: 32px; width: 120px; height: 120px;
-      border: 2px solid #222; border-radius: 50%; position: relative; overflow: hidden;
-    }
-    #tilt-bubble {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: currentColor; position: absolute;
-      transform: translate(-50%, -50%);
-      transition: left 0.05s linear, top 0.05s linear;
-      top: 50%; left: 50%;
-    }
-
-    /* Post-round survey */
-    #survey-overlay {
-      display: none; position: fixed; inset: 0; z-index: 200;
-      background: #0a0a0f; overflow-y: auto;
-      flex-direction: column; padding: 36px 28px 28px;
-      font-family: 'Courier New', monospace;
-    }
-    #survey-overlay.visible { display: flex; }
-    #survey-title {
-      font-size: 22px; font-weight: bold; color: #00ff88;
-      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
-    }
-    #survey-sub {
-      font-size: 12px; color: #888; letter-spacing: 1px; margin-bottom: 20px; line-height: 1.6;
-    }
-
-    /* Demographics section */
-    #demographics-section { display: none; margin-bottom: 20px; }
-    .demo-group { margin-bottom: 16px; }
-    .demo-label {
-      font-size: 10px; color: #aaa; letter-spacing: 2px; text-transform: uppercase;
-      display: block; margin-bottom: 8px;
-    }
-    .demo-options { display: flex; flex-wrap: wrap; gap: 8px; }
-    .demo-options label {
-      display: flex; align-items: center; gap: 6px; cursor: pointer;
-      font-size: 13px; color: #ccc; padding: 7px 12px;
-      background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
-      transition: border-color 0.15s;
-    }
-    .demo-options input[type=radio] { accent-color: #00ff88; }
-    .demo-options label:has(input:checked) { border-color: #00ff88; color: #00ff88; }
-    .demo-age-wrap { display: flex; align-items: center; gap: 12px; }
-    #demo-age {
-      width: 80px; background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
-      color: #e0e0e0; font-family: 'Courier New', monospace; font-size: 16px;
-      padding: 8px 12px; outline: none; text-align: center;
-    }
-    #demo-age:focus { border-color: #00ff88; }
-    .demo-divider {
-      border: none; border-top: 1px solid #1a1a2a; margin: 4px 0 20px;
-    }
-
-    #survey-feedback-label {
-      font-size: 10px; color: #aaa; letter-spacing: 2px;
-      text-transform: uppercase; margin-bottom: 8px;
-    }
-    #survey-textarea {
-      width: 100%; min-height: 100px; background: #111;
-      border: 1px solid #333; border-radius: 10px; color: #e0e0e0;
-      font-family: 'Courier New', monospace; font-size: 15px;
-      padding: 14px; resize: none; outline: none; line-height: 1.6;
-    }
-    #survey-textarea:focus { border-color: #00ff88; }
-    #survey-textarea::placeholder { color: #333; }
-    #survey-actions { display: flex; gap: 12px; margin-top: 20px; }
-    #survey-submit {
-      flex: 1; padding: 16px; background: #00ff88; color: #0a0a0f;
-      border: none; border-radius: 10px; font-family: 'Courier New', monospace;
-      font-size: 16px; font-weight: bold; letter-spacing: 2px;
-      text-transform: uppercase; cursor: pointer;
-    }
-    #survey-submit:active { opacity: 0.8; }
-    #survey-skip {
-      padding: 16px 22px; background: transparent; color: #333;
-      border: 1px solid #222; border-radius: 10px; font-family: 'Courier New', monospace;
-      font-size: 14px; cursor: pointer; letter-spacing: 1px;
-    }
-    #survey-skip:active { color: #666; }
-    #survey-thanks {
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      flex: 1; text-align: center;
-    }
-    #survey-thanks-icon { font-size: 56px; margin-bottom: 16px; }
-    #survey-thanks-msg  { font-size: 18px; color: #00ff88; letter-spacing: 3px; text-transform: uppercase; }
   </style>
 </head>
 <body>
 
-  <!-- Name entry — shown before connecting -->
-  <div id="join-overlay" style="
-      display:flex; position:fixed; inset:0; z-index:300; background:#0a0a0f;
-      flex-direction:column; align-items:center; justify-content:center;
-      padding:40px; font-family:'Courier New',monospace; text-align:center;">
-    <div style="font-size:28px;font-weight:bold;color:#00ff88;letter-spacing:3px;
-                text-transform:uppercase;margin-bottom:8px;">Body Schema Hack</div>
-    <div style="font-size:12px;color:#888;letter-spacing:2px;margin-bottom:40px;">
-      TILT CONTROLLER
+  <!-- ══ SCREEN: JOIN + DEMOGRAPHICS ══════════════════════════════════════════ -->
+  <div id="screen-join" class="screen active">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+      <span class="ctrl-session">STUDY</span>
     </div>
-    <input id="join-name" type="text" maxlength="20" placeholder="Enter your name"
-      autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
-      style="width:100%;padding:16px;background:#111;border:1px solid #333;
-             border-radius:10px;color:#e0e0e0;font-family:'Courier New',monospace;
-             font-size:18px;outline:none;text-align:center;letter-spacing:2px;
-             margin-bottom:16px;" />
-    <button id="join-btn" style="
-        width:100%;padding:18px;background:#00ff88;color:#0a0a0f;border:none;
-        border-radius:12px;font-family:'Courier New',monospace;font-size:18px;
-        font-weight:bold;letter-spacing:3px;text-transform:uppercase;cursor:pointer;">
-      Join Game
-    </button>
-  </div>
+    <div class="bh-red-stripe"></div>
+    <div class="ctrl-body">
+      <div class="bh-eyebrow">Participant Setup</div>
+      <div class="ctrl-headline">Join<br>Session</div>
+      <div class="bh-rule" style="margin-bottom:14px"></div>
 
-  <div id="permission-overlay">
-    <div style="font-size:44px;margin-bottom:18px;">📱</div>
-    <div style="font-size:20px;font-weight:bold;margin-bottom:10px;">Motion Permission Required</div>
-    <div style="color:#666;font-size:14px;line-height:1.7;">
-      This controller needs your device's tilt sensor.<br/>Tap Allow to continue.
+      <label class="bh-field-label" for="join-name">Your Name</label>
+      <input id="join-name" class="bh-input" type="text" maxlength="20"
+        placeholder="Enter name…" autocomplete="off" autocorrect="off"
+        autocapitalize="words" spellcheck="false" />
+
+      <label class="bh-field-label">Handedness</label>
+      <div class="bh-chip-row" id="chips-hand">
+        <div class="bh-chip" data-val="Right">Right</div>
+        <div class="bh-chip" data-val="Left">Left</div>
+        <div class="bh-chip" data-val="Either">Either</div>
+      </div>
+
+      <label class="bh-field-label">Gaming experience</label>
+      <div class="bh-chip-row" id="chips-gaming">
+        <div class="bh-chip" data-val="None">None</div>
+        <div class="bh-chip" data-val="Casual">Casual</div>
+        <div class="bh-chip" data-val="Regular">Regular</div>
+        <div class="bh-chip" data-val="Frequent">Frequent</div>
+      </div>
+
+      <label class="bh-field-label">Tilt game experience?</label>
+      <div class="bh-chip-row" id="chips-tilt">
+        <div class="bh-chip" data-val="Yes">Yes</div>
+        <div class="bh-chip" data-val="No">No</div>
+      </div>
+
+      <label class="bh-field-label" for="join-age">Age</label>
+      <input id="join-age" class="bh-input" type="number" min="10" max="99"
+        placeholder="—" style="width:80px" />
+
+      <label class="bh-field-label">Gender</label>
+      <div class="bh-chip-row" id="chips-gender">
+        <div class="bh-chip" data-val="Man">Man</div>
+        <div class="bh-chip" data-val="Woman">Woman</div>
+        <div class="bh-chip" data-val="Non-binary">Non-binary</div>
+        <div class="bh-chip" data-val="Prefer not to say">Prefer not to say</div>
+      </div>
+
+      <button id="join-btn" class="bh-btn-primary" style="margin-top:16px">
+        JOIN SESSION →
+      </button>
+      <div style="margin-top:8px;font-family:'Barlow',sans-serif;font-size:7px;
+                  color:var(--gray);letter-spacing:0.08em;text-align:center">
+        UBC HCI Lab · Data used for research only
+      </div>
     </div>
-    <button id="permission-btn">Allow Tilt Access</button>
   </div>
 
-  <div id="status-icon">○</div>
-  <div id="status-label">Connecting…</div>
-  <div id="status-sub">Body Schema Hack · Controller</div>
-
-  <!-- Live tilt bubble (visual feedback for participant) -->
-  <div id="tilt-indicator">
-    <div id="tilt-bubble"></div>
+  <!-- ══ SCREEN: PERMISSION (iOS gyro) ════════════════════════════════════════ -->
+  <div id="screen-permission" class="screen">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+    </div>
+    <div class="bh-red-stripe"></div>
+    <div class="calib-center">
+      <div class="bh-eyebrow" style="margin-bottom:10px">Motion Access</div>
+      <div class="ctrl-headline" style="font-size:22px;text-align:center">Allow Tilt<br>Sensor</div>
+      <div class="bh-rule" style="width:40px;margin:12px auto"></div>
+      <div class="ctrl-sub" style="max-width:240px;margin-bottom:20px">
+        This controller needs your device's tilt sensor to detect phone orientation.
+      </div>
+      <button id="permission-btn" class="bh-btn-primary" style="max-width:200px">
+        ALLOW ACCESS →
+      </button>
+    </div>
   </div>
 
-  <!-- Tilt rationale — shown once the player is assigned and waiting for game start -->
-  <div id="tilt-rationale" style="
-      display:none; max-width:300px; margin-top:28px; padding:16px 20px;
-      border:1px solid #1a1a2a; border-radius:10px;
-      font-size:11px; color:#666; letter-spacing:1px; line-height:1.8;
-      text-align:center;">
-    Use your non-dominant hand only to hold and tilt this phone.<br>
-    Tilt — not a button — engages your body posture directly.<br>
-    The feedback you receive is being studied as a way to extend body awareness during non-dominant hand control.
+  <!-- ══ SCREEN: READY ═════════════════════════════════════════════════════════ -->
+  <div id="screen-ready" class="screen">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+      <span class="ctrl-session" id="ready-session-tag">P1 · HAPTIC</span>
+    </div>
+    <div class="bh-red-stripe"></div>
+    <div class="ctrl-body">
+      <div class="bh-eyebrow">Waiting to start</div>
+      <div class="ctrl-headline" id="ready-headline">Player 1<br>Ready</div>
+      <div class="bh-rule" style="margin-bottom:12px"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="ctrl-badge" id="ready-badge">HAPTIC</span>
+        <span class="ctrl-sub">Session feedback mode</span>
+      </div>
+      <div class="ctrl-sub" id="ready-modality-desc" style="margin-bottom:12px">
+        Your phone will vibrate — pulses grow stronger as the ball nears the path edge.
+      </div>
+      <div class="bh-thin-rule" style="margin:10px 0"></div>
+      <div style="font-family:'Barlow',sans-serif;font-size:9px;font-weight:600;
+                  color:var(--black);margin-bottom:4px">
+        Use your non-dominant hand only.
+      </div>
+      <div class="ctrl-sub" style="margin-bottom:12px">
+        Hold and tilt this phone with your weaker hand. Dominant hand rests at your side.
+      </div>
+      <div class="bh-thin-rule" style="margin:10px 0"></div>
+      <div class="ctrl-sub" style="color:#bbb">Waiting for researcher to start…</div>
+    </div>
   </div>
 
+  <!-- ══ SCREEN: CALIBRATION ═══════════════════════════════════════════════════ -->
+  <div id="screen-calibration" class="screen">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+      <span class="ctrl-session" id="calib-session-tag">P1</span>
+    </div>
+    <div class="bh-red-stripe"></div>
+    <div class="calib-center">
+      <div class="calib-icon">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="11" width="20" height="13" rx="2" stroke="#1a1a1a" stroke-width="1.8"/>
+          <line x1="6" y1="17" x2="26" y2="17" stroke="#1a1a1a" stroke-width="1"/>
+          <circle cx="16" cy="21" r="1.5" fill="#1a1a1a"/>
+        </svg>
+      </div>
+      <div class="bh-eyebrow" style="margin-bottom:8px">Calibrate</div>
+      <div class="ctrl-headline" style="font-size:24px;text-align:center">Hold Phone<br>Flat</div>
+      <div class="bh-rule" style="width:40px;margin:12px auto"></div>
+      <div class="ctrl-sub" style="max-width:250px;margin-bottom:24px">
+        Rest the phone on a flat surface or hold it level. This sets your neutral tilt.
+      </div>
+      <button id="calibrate-btn" class="bh-btn-primary" style="max-width:200px">
+        CALIBRATE →
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: PLAYING ════════════════════════════════════════════════════════ -->
+  <div id="screen-playing" class="screen">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+      <span class="ctrl-session" id="playing-session-tag">P1 · HAPTIC</span>
+    </div>
+    <div class="bh-red-stripe"></div>
+    <div class="ctrl-body">
+      <div class="bh-eyebrow">Now Playing</div>
+      <div class="ctrl-headline" id="playing-headline">LEVEL<br>ONE</div>
+      <div class="bh-rule" style="margin-bottom:12px"></div>
+      <div class="ctrl-sub" style="margin-bottom:12px">
+        Tilt with your non-dominant hand only.
+      </div>
+      <span class="ctrl-badge" id="playing-badge">HAPTIC</span>
+      <div class="ctrl-sub" style="margin-top:16px;color:#bbb;font-size:7.5px">
+        Double-tap screen to recalibrate tilt
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: SURVEY ════════════════════════════════════════════════════════ -->
+  <div id="screen-survey" class="screen">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+      <span class="ctrl-session">FEEDBACK</span>
+    </div>
+    <div class="bh-red-stripe"></div>
+    <div class="ctrl-body">
+      <div class="bh-eyebrow">Session Complete</div>
+      <div class="ctrl-headline" style="font-size:22px">Your<br>Feedback</div>
+      <div class="bh-rule" style="margin-bottom:12px"></div>
+      <div class="ctrl-sub" style="margin-bottom:12px">
+        How did the task feel? Any comments on the feedback or difficulty?
+      </div>
+      <textarea id="survey-textarea" class="survey-textarea"
+        placeholder="Write anything…"></textarea>
+      <button id="survey-submit" class="bh-btn-primary">SUBMIT →</button>
+      <button id="survey-skip" class="bh-btn-secondary" style="margin-top:6px">SKIP</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: THANKS ════════════════════════════════════════════════════════ -->
+  <div id="screen-thanks" class="screen">
+    <div class="ctrl-topbar">
+      <span class="ctrl-wordmark">PATHSENSE</span>
+    </div>
+    <div class="bh-red-stripe"></div>
+    <div class="thanks-center">
+      <div style="width:48px;height:48px;background:var(--red);
+                  display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <span style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff">✓</span>
+      </div>
+      <div class="ctrl-headline" style="font-size:24px;text-align:center">Thanks!</div>
+      <div class="ctrl-sub" style="margin-top:8px;text-align:center">Session data saved.</div>
+    </div>
+  </div>
+
+  <!-- ══ SHARED ══ -->
   <div id="error-msg"></div>
-
-  <!-- Post-round survey -->
-  <div id="survey-overlay">
-    <div id="survey-form">
-      <div id="survey-title">Session complete!</div>
-      <div id="survey-sub">
-        Please answer the questions below and share any thoughts on the experience.
-      </div>
-
-      <!-- Demographics — shown only on first session (playCount === 0) -->
-      <div id="demographics-section">
-        <div class="demo-group">
-          <span class="demo-label">Age</span>
-          <div class="demo-age-wrap">
-            <input id="demo-age" type="number" min="10" max="99" placeholder="—" />
-            <span style="font-size:12px;color:#555">years</span>
-          </div>
-        </div>
-
-        <div class="demo-group">
-          <span class="demo-label">Gender</span>
-          <div class="demo-options">
-            <label><input type="radio" name="demo-gender" value="Man" /> Man</label>
-            <label><input type="radio" name="demo-gender" value="Woman" /> Woman</label>
-            <label><input type="radio" name="demo-gender" value="Non-binary" /> Non-binary</label>
-            <label><input type="radio" name="demo-gender" value="Prefer not to say" /> Prefer not to say</label>
-          </div>
-        </div>
-
-        <div class="demo-group">
-          <span class="demo-label">Dominant hand</span>
-          <div class="demo-options">
-            <label><input type="radio" name="demo-hand" value="Right" /> Right</label>
-            <label><input type="radio" name="demo-hand" value="Left" /> Left</label>
-            <label><input type="radio" name="demo-hand" value="Either" /> Either</label>
-          </div>
-        </div>
-
-        <div class="demo-group">
-          <span class="demo-label">Gaming experience (video games)</span>
-          <div class="demo-options">
-            <label><input type="radio" name="demo-gaming" value="None" /> None</label>
-            <label><input type="radio" name="demo-gaming" value="Casual" /> Casual (&lt;1 hr/wk)</label>
-            <label><input type="radio" name="demo-gaming" value="Regular" /> Regular (1–5 hr/wk)</label>
-            <label><input type="radio" name="demo-gaming" value="Frequent" /> Frequent (&gt;5 hr/wk)</label>
-          </div>
-        </div>
-
-        <div class="demo-group">
-          <span class="demo-label">Prior experience with tilt/motion controls?</span>
-          <div class="demo-options">
-            <label><input type="radio" name="demo-tilt" value="Yes" /> Yes</label>
-            <label><input type="radio" name="demo-tilt" value="No" /> No</label>
-          </div>
-        </div>
-
-        <hr class="demo-divider" />
-      </div>
-
-      <!-- Open feedback — shown every session -->
-      <div id="survey-feedback-label">Any thoughts on the feedback / controls?</div>
-      <textarea id="survey-textarea"
-        placeholder="e.g. the haptic was too strong… the audio helped me anticipate… the ball felt slippery…"></textarea>
-
-      <div id="survey-actions">
-        <button id="survey-submit">Submit</button>
-        <button id="survey-skip">Skip</button>
-      </div>
-    </div>
-    <div id="survey-thanks">
-      <div id="survey-thanks-icon">✓</div>
-      <div id="survey-thanks-msg">Thanks!</div>
-    </div>
-  </div>
-
   <div id="debug-panel">
-    <div>γ: <span id="debug-gamma">0.0°</span> &nbsp; β: <span id="debug-beta">0.0°</span></div>
-    <div id="debug-state" style="margin-top:4px;color:#555;">state: idle</div>
+    γ: <span id="debug-gamma">0.0°</span> &nbsp; β: <span id="debug-beta">0.0°</span>
+    <span id="debug-state" style="margin-left:8px;color:#888">idle</span>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gyronorm@2.0.6/dist/gyronorm.complete.min.js"></script>
   <script src="/js/controller.js"></script>
-
-  <!-- Live tilt bubble animation -->
-  <script>
-    const bubble = document.getElementById('tilt-bubble');
-    const ring   = document.getElementById('tilt-indicator');
-    // Re-use the gamma/beta values updated by controller.js
-    function updateBubble() {
-      if (typeof currentGamma === 'undefined') { requestAnimationFrame(updateBubble); return; }
-      const maxShift = 44;
-      const bx = 50 + Math.max(-1, Math.min(1, currentGamma / 30)) * maxShift;
-      const by = 50 + Math.max(-1, Math.min(1, currentBeta  / 30)) * maxShift;
-      bubble.style.left = bx + '%';
-      bubble.style.top  = by + '%';
-      requestAnimationFrame(updateBubble);
-    }
-    // Set bubble color to match player color after controller.js sets PLAYER_COLOR
-    window.addEventListener('load', () => {
-      if (typeof PLAYER_COLOR !== 'undefined') bubble.style.color = PLAYER_COLOR;
-      requestAnimationFrame(updateBubble);
-    });
-  </script>
 </body>
 </html>
