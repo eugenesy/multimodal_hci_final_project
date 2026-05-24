@@ -3,224 +3,305 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Body Schema Hack</title>
+  <title>PathSense — Admin</title>
+  <link rel="stylesheet" href="/css/bauhaus.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: var(--cream); color: var(--black); overflow: hidden; }
+    body { font-family: 'Barlow', sans-serif; display: flex; flex-direction: column; }
 
-    body {
-      background: #0a0a0f; color: #e0e0e0;
-      font-family: 'Courier New', monospace;
-      height: 100vh; overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-
-    /* ── Top bar ────────────────────────────────────────────── */
+    /* ── Top bar ── */
     #topbar {
-      display: flex; align-items: center; gap: 16px;
-      padding: 12px 24px; border-bottom: 1px solid #111;
+      background: var(--black);
+      padding: 11px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       flex-shrink: 0;
     }
-    .topbar-title { font-size: 11px; letter-spacing: 4px; color: #aaa; text-transform: uppercase; }
+    #topbar-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--cream);
+      letter-spacing: 0.16em;
+    }
+    #topbar-wordmark span {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px;
+      font-weight: 300;
+      color: var(--gray);
+      letter-spacing: 0.1em;
+      margin-left: 10px;
+    }
+    #topbar-right { display: flex; align-items: center; gap: 12px; }
+    #round-label {
+      font-family: 'Barlow', sans-serif;
+      font-size: 8px;
+      font-weight: 300;
+      color: var(--gray);
+      letter-spacing: 0.1em;
+    }
     #phase-badge {
-      font-size: 10px; letter-spacing: 2px; padding: 4px 10px;
-      border-radius: 20px; text-transform: uppercase;
-      background: #1a1a1a; color: #999; border: 1px solid #2a2a2a;
+      font-family: 'Syne', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      color: var(--black);
+      background: var(--rule);
     }
-    #phase-badge.lobby  { background: #001a0a; color: #00ff88; border-color: #00ff8833; }
-    #phase-badge.game   { background: #1a0000; color: #ff4455; border-color: #ff445533; }
-    .topbar-spacer { flex: 1; }
-    #round-label { font-size: 11px; color: #aaa; letter-spacing: 2px; }
+    #phase-badge.game { background: var(--red); color: #fff; }
 
-    /* ── Main layout ────────────────────────────────────────── */
+    /* ── Red stripe ── */
+    .bh-red-stripe { height: 3px; background: var(--red); flex-shrink: 0; }
+
+    /* ── 3-column body ── */
     #main {
-      flex: 1; display: flex; overflow: hidden;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 210px 1fr 1fr;
+      overflow: hidden;
+    }
+    .admin-col {
+      padding: 14px 16px;
+      border-right: 1px solid var(--rule);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .admin-col:last-child { border-right: none; }
+    .col-title {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 2px;
     }
 
-    /* ── Left column: QR + controls ────────────────────────── */
-    #col-left {
-      width: 280px; min-width: 240px; flex-shrink: 0;
-      display: flex; flex-direction: column;
-      padding: 24px 20px; gap: 20px;
-      border-right: 1px solid #111; overflow-y: auto;
+    /* ── Participant card ── */
+    .player-card {
+      border-left: 3px solid var(--red);
+      padding: 8px 10px;
+      background: #ede9e2;
+    }
+    .player-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--black);
+    }
+    .player-meta {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7.5px;
+      font-weight: 300;
+      color: var(--gray);
+      margin-top: 2px;
+    }
+    .player-empty {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px;
+      color: #bbb;
+      letter-spacing: 0.08em;
     }
 
-    .section-label {
-      font-size: 9px; letter-spacing: 3px; color: #aaa;
-      text-transform: uppercase; margin-bottom: 10px;
-    }
-
+    /* ── QR ── */
     #qr-single {
-      width: 160px; height: 160px; border: 2px solid #1a1a2a;
-      border-radius: 10px; image-rendering: pixelated; background: #111;
-      display: block; margin: 0 auto;
+      width: 90px; height: 90px;
+      image-rendering: pixelated;
+      background: #eee;
+      display: block;
     }
     #url-single {
-      font-size: 10px; color: #888; letter-spacing: 1px;
-      text-align: center; word-break: break-all; margin-top: 6px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 7px;
+      color: var(--gray);
+      word-break: break-all;
+      margin-top: 4px;
     }
 
-    /* ── Buttons ────────────────────────────────────────────── */
-    .btn {
-      width: 100%; padding: 14px; border: none; border-radius: 10px;
-      font-family: 'Courier New', monospace; font-size: 14px;
-      font-weight: bold; letter-spacing: 2px; cursor: pointer;
-      text-transform: uppercase;
-    }
-    .btn-primary { background: #00ff88; color: #0a0a0f; }
-    .btn-primary:hover:not(:disabled) { background: #00dd77; }
-    .btn-primary:disabled { background: #0d2a1a; color: #0d3a1a; cursor: not-allowed; }
-
-    .btn-secondary {
-      background: transparent; color: #999; border: 1px solid #333;
-    }
-    .btn-secondary:hover { color: #aaa; border-color: #333; }
-
-    .btn-danger {
-      background: transparent; color: #ff4455; border: 1px solid #ff445522;
-    }
-    .btn-danger:hover { background: #ff445511; }
-
+    /* ── Level buttons ── */
     .level-btn {
-      width: 100%; padding: 12px; border: 1px solid #00ff8844; border-radius: 10px;
-      font-family: 'Courier New', monospace; font-size: 13px;
-      font-weight: bold; letter-spacing: 2px; cursor: pointer;
-      text-transform: uppercase; background: #001a0a; color: #00ff88;
-      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1.5px solid var(--black);
+      padding: 8px 10px;
+      cursor: pointer;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      transition: background 0.1s;
     }
-    .level-btn:hover:not(:disabled) { background: #003318; }
-    .level-btn:disabled { background: #0a0a0a; color: #333; border-color: #1a1a1a; cursor: not-allowed; }
-    .level-btn.done { background: #0a1a0a; color: #446644; border-color: #2a3a2a; }
+    .level-btn:hover:not(:disabled) { background: #ede9e2; }
+    .level-btn:disabled { border-color: var(--rule); cursor: not-allowed; }
+    .level-btn.done { border-color: var(--rule); }
+    .lvl-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--black);
+      line-height: 1;
+      min-width: 22px;
+    }
+    .level-btn.done .lvl-num { color: var(--rule); }
+    .lvl-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--black);
+    }
+    .lvl-desc {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7.5px;
+      font-weight: 300;
+      color: var(--gray);
+      margin-top: 1px;
+    }
+    .level-btn.done .lvl-title,
+    .level-btn.done .lvl-desc { color: var(--rule); }
 
-    /* ── Middle column: players ─────────────────────────────── */
-    #col-mid {
-      flex: 1; display: flex; flex-direction: column;
-      padding: 24px 20px; gap: 12px; overflow: hidden;
+    #lobby-btn {
+      border: 1px solid var(--rule);
+      padding: 7px 10px;
+      background: transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    #lobby-btn-label {
+      font-family: 'Barlow', sans-serif;
+      font-size: 8px;
+      color: var(--gray);
+    }
+    #lobby-btn-action {
+      font-family: 'Syne', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: 0.1em;
     }
 
-    #player-header {
-      display: flex; align-items: baseline; justify-content: space-between;
-      flex-shrink: 0;
-    }
-    #player-count { font-size: 11px; color: #aaa; letter-spacing: 2px; }
-
-    #player-list {
-      flex: 1; overflow-y: auto; display: flex;
-      flex-direction: column; gap: 6px;
-    }
-
-    .player-empty {
-      color: #555; font-size: 12px; letter-spacing: 2px;
-      text-transform: uppercase; text-align: center; margin-top: 40px;
-    }
-
-    .player-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px; background: #0d0d12;
-      border-left: 3px solid #333; border-radius: 8px;
-    }
-    .pr-num     { font-size: 13px; font-weight: bold; min-width: 24px; }
-    .pr-name    { font-size: 15px; font-weight: bold; flex: 1; }
-    .pr-mod     { font-size: 11px; color: #888; letter-spacing: 1px; min-width: 72px; text-align: right; }
-    .pr-session { font-size: 10px; color: #666; letter-spacing: 1px; min-width: 56px; text-align: right; }
-
-    /* ── Right column: results ──────────────────────────────── */
-    #col-right {
-      width: 320px; min-width: 260px; flex-shrink: 0;
-      display: flex; flex-direction: column;
-      padding: 24px 20px; gap: 12px;
-      border-left: 1px solid #111; overflow-y: auto;
-    }
-
-    #results-title { font-size: 13px; color: #e0e0e0; letter-spacing: 2px; }
-
-    #results-panel {
-      flex: 1; display: flex; flex-direction: column; gap: 8px;
-    }
-
-    .results-empty {
-      color: #555; font-size: 12px; letter-spacing: 2px;
-      text-transform: uppercase; text-align: center; margin-top: 40px;
-    }
-
-    .result-round { margin-bottom: 16px; }
+    /* ── Results ── */
     .result-round-label {
-      font-size: 9px; letter-spacing: 3px; color: #aaa;
-      text-transform: uppercase; margin-bottom: 6px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 7px;
+      color: var(--gray);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
     }
-    .result-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 10px; border-radius: 6px; background: #0d0d12;
+    .result-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--rule);
     }
-    .rr-rank  { font-size: 14px; min-width: 20px; }
-    .rr-name  { font-size: 13px; font-weight: bold; flex: 1; }
-    .rr-score { font-size: 12px; color: #666; }
-    .rr-mod   { font-size: 11px; color: #888; min-width: 20px; text-align: right; }
+    .result-entry:last-child { border-bottom: none; }
+    .re-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--black);
+    }
+    .re-meta {
+      font-family: 'Barlow', sans-serif;
+      font-size: 7.5px;
+      color: var(--gray);
+    }
+    .re-falls {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--red);
+    }
+    .results-empty {
+      font-family: 'Barlow', sans-serif;
+      font-size: 9px;
+      color: #bbb;
+      letter-spacing: 0.08em;
+    }
 
-    /* ── Notification toast ─────────────────────────────────── */
+    /* ── Export ── */
+    .export-btn {
+      border: 1.5px solid var(--black);
+      padding: 7px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-size: 8px;
+      font-weight: 700;
+      color: var(--black);
+      letter-spacing: 0.1em;
+    }
+    .export-btn:hover { background: #ede9e2; }
+
+    /* ── Toast ── */
     #notification {
       display: none; position: fixed; bottom: 20px; left: 50%;
-      transform: translateX(-50%); background: #0f0f18;
-      border: 1px solid #333; border-radius: 8px;
-      padding: 10px 20px; font-size: 13px; letter-spacing: 1px;
-      z-index: 500; pointer-events: none;
+      transform: translateX(-50%); background: var(--black);
+      color: var(--cream); border: 1px solid var(--red);
+      padding: 8px 18px; font-family: 'Barlow', sans-serif;
+      font-size: 11px; z-index: 500; pointer-events: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- ══ Top bar ════════════════════════════════════════════════════════════ -->
   <div id="topbar">
-    <div class="topbar-title">Body Schema Hack</div>
-    <div id="phase-badge" class="lobby">Lobby</div>
-    <div class="topbar-spacer"></div>
-    <div id="round-label">Round 0</div>
+    <div id="topbar-wordmark">PATHSENSE <span>RESEARCHER PANEL</span></div>
+    <div id="topbar-right">
+      <div id="round-label">Round 0</div>
+      <div id="phase-badge">LOBBY</div>
+    </div>
   </div>
+  <div class="bh-red-stripe"></div>
 
-  <!-- ══ Main ═══════════════════════════════════════════════════════════════ -->
   <div id="main">
 
-    <!-- ── Left: QR + controls ────────────────────────────── -->
-    <div id="col-left">
+    <!-- Col 1: Participant + QR -->
+    <div class="admin-col">
+      <div class="col-title">Participant</div>
+      <div id="player-list"><div class="player-empty">No player connected yet</div></div>
 
-      <div>
-        <div class="section-label">Join Link</div>
-        <img id="qr-single" src="" alt="QR" />
-        <div id="url-single"></div>
-      </div>
+      <div class="bh-thin-rule"></div>
 
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div id="level-btns" style="display:flex;flex-direction:column;gap:8px;"></div>
-        <button id="lobby-btn"  class="btn btn-secondary" onclick="adminBackToLobby()" style="display:none">← Back to Lobby</button>
-        <a      id="export-btn" class="btn btn-secondary" href="/export-csv" download style="text-align:center;text-decoration:none">↓ Export CSV</a>
-      </div>
+      <div class="col-title">Controller QR</div>
+      <img id="qr-single" src="" alt="QR" />
+      <div id="url-single"></div>
+    </div>
 
-      <div style="font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;text-align:center;line-height:1.8">
-        Single-player study<br>1 participant per session
+    <!-- Col 2: Levels -->
+    <div class="admin-col">
+      <div class="col-title">Levels</div>
+      <div id="level-btns" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="lobby-btn" onclick="adminBackToLobby()" style="display:none">
+        <div id="lobby-btn-label">Session reset</div>
+        <div id="lobby-btn-action">→ LOBBY</div>
       </div>
     </div>
 
-    <!-- ── Middle: player list ────────────────────────────── -->
-    <div id="col-mid">
-      <div id="player-header">
-        <div class="section-label" style="margin:0">Connected Players</div>
-        <div id="player-count">0 / 1</div>
-      </div>
-      <div id="player-list">
-        <div class="player-empty">No players connected yet</div>
-      </div>
-    </div>
-
-    <!-- ── Right: round results ───────────────────────────── -->
-    <div id="col-right">
-      <div id="results-title" class="section-label">Round Results</div>
+    <!-- Col 3: Results + Export -->
+    <div class="admin-col">
+      <div class="col-title">Results</div>
       <div id="results-panel">
-        <div class="results-empty">Results will appear here after each round</div>
+        <div class="results-empty">Results appear here after each round</div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:auto;padding-top:10px">
+        <a href="/export-csv"    download class="export-btn" style="flex:1">↓ CSV</a>
+        <a href="/export-survey" download class="export-btn" style="flex:1">↓ SURVEY</a>
       </div>
     </div>
 
   </div>
 
-  <!-- ══ Toast ══════════════════════════════════════════════════════════════ -->
   <div id="notification"></div>
 
   <script src="/socket.io/socket.io.js"></script>

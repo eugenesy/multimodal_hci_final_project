@@ -77,25 +77,37 @@ function _setPhase(phase) {
   const roundLbl = document.getElementById('round-label');
 
   if (badge) {
-    badge.textContent = phase === 'GAME' ? `In Game — Level ${currentLevel}` : 'Lobby';
-    badge.className   = phase === 'GAME' ? 'game' : 'lobby';
+    badge.textContent = phase === 'GAME' ? `GAME — L${currentLevel}` : 'LOBBY';
+    badge.className   = phase === 'GAME' ? 'game' : '';
   }
   if (roundLbl) roundLbl.textContent = `Round ${currentRound}`;
-  if (lobbyBtn) lobbyBtn.style.display = phase === 'GAME' ? 'block' : 'none';
+  if (lobbyBtn) lobbyBtn.style.display = phase === 'GAME' ? 'flex' : 'none';
 
   _renderLevelButtons();
 }
+
+const LEVEL_META = {
+  1: { title: 'Introductory', desc: 'S-curve · 90 s · ±80 px' },
+  2: { title: 'Moderate',     desc: 'N-shape · 75 s · ±55 px' },
+  3: { title: 'Hard',         desc: 'Zigzag · 60 s · ±35 px' },
+};
 
 function _renderLevelButtons() {
   const container = document.getElementById('level-btns');
   if (!container) return;
   container.innerHTML = '';
   [1, 2, 3].forEach(lvl => {
-    const btn = document.createElement('button');
     const done = completedLevels.has(lvl);
-    btn.textContent = done ? `✓ Level ${lvl}` : `▶ Level ${lvl}`;
-    btn.className   = done ? 'level-btn done' : 'level-btn';
-    btn.disabled    = currentPhase !== 'LOBBY' || players.length < 1;
+    const meta = LEVEL_META[lvl];
+    const btn  = document.createElement('button');
+    btn.className = `level-btn${done ? ' done' : ''}`;
+    btn.disabled  = currentPhase !== 'LOBBY' || players.length < 1;
+    btn.innerHTML = `
+      <div class="lvl-num">${done ? '✓' : lvl}</div>
+      <div>
+        <div class="lvl-title">${meta.title}</div>
+        <div class="lvl-desc">${meta.desc}</div>
+      </div>`;
     btn.addEventListener('click', () => adminStartLevel(lvl));
     container.appendChild(btn);
   });
@@ -103,30 +115,25 @@ function _renderLevelButtons() {
 
 // ─── Player list ──────────────────────────────────────────────────────────────
 function _renderPlayers() {
-  const list  = document.getElementById('player-list');
-  const count = document.getElementById('player-count');
+  const list = document.getElementById('player-list');
   if (!list) return;
 
-  if (count) count.textContent = `${players.length} / 1`;
-
   if (!players.length) {
-    list.innerHTML = '<div class="player-empty">No players connected yet</div>';
+    list.innerHTML = '<div class="player-empty">No player connected yet</div>';
     _setPhase(currentPhase);
     return;
   }
 
-  const ml = { haptic:'📳 Haptic', audio:'🔊 Audio', none:'— None' };
+  const ml = { haptic: '📳 Haptic', audio: '🔊 Audio', none: '— None' };
   list.innerHTML = '';
   for (const p of players) {
-    const row = document.createElement('div');
-    row.className = 'player-row';
-    row.style.borderLeftColor = p.color;
-    row.innerHTML = `
-      <span class="pr-num" style="color:${_esc(p.color)}">P${p.playerNum}</span>
-      <span class="pr-name" style="color:${_esc(p.color)}">${_esc(p.playerName)}</span>
-      <span class="pr-mod">${ml[p.modality] || p.modality}</span>
-      <span class="pr-session">S${(p.playCount || 0) + 1}</span>`;
-    list.appendChild(row);
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    const handStr = p.handedness ? ` · ${p.handedness}-handed` : '';
+    card.innerHTML = `
+      <div class="player-name">${_esc(p.playerName)}</div>
+      <div class="player-meta">${ml[p.modality] || p.modality} · Session ${(p.playCount || 0) + 1}${handStr}</div>`;
+    list.appendChild(card);
   }
 
   _setPhase(currentPhase);
@@ -138,36 +145,36 @@ function _renderResults() {
   if (!panel) return;
 
   if (!allResults.length) {
-    panel.innerHTML = '<div class="results-empty">Results will appear here after each round</div>';
+    panel.innerHTML = '<div class="results-empty">Results appear here after each round</div>';
     return;
   }
 
-  const ml = { haptic:'📳', audio:'🔊', none:'—' };
+  const ml = { haptic: '📳', audio: '🔊', none: '—' };
   panel.innerHTML = '';
 
-  // Show most recent rounds first
-  for (const { round, rankings } of [...allResults].reverse()) {
+  for (const { round, level, rankings } of [...allResults].reverse()) {
     const section = document.createElement('div');
-    section.className = 'result-round';
+    section.style.marginBottom = '14px';
 
     const lbl = document.createElement('div');
     lbl.className   = 'result-round-label';
-    lbl.textContent = `Round ${round}`;
+    lbl.textContent = `Round ${round} — Level ${level}`;
     section.appendChild(lbl);
 
-    for (let i = 0; i < rankings.length; i++) {
-      const entry = rankings[i];
-      const p     = players.find(pl => pl.playerNum === entry.playerNum);
-      const color = p?.color || '#888';
-      const name  = _esc(p?.playerName || `P${entry.playerNum}`);
+    for (const entry of rankings) {
+      const p    = players.find(pl => pl.playerNum === entry.playerNum);
+      const name = _esc(p?.playerName || `P${entry.playerNum}`);
 
       const row = document.createElement('div');
-      row.className = 'result-row';
+      row.className = 'result-entry';
       row.innerHTML = `
-        <span class="rr-rank">🏆</span>
-        <span class="rr-name" style="color:${color}">${name}</span>
-        <span class="rr-score">${entry.score}pt · ${entry.falls ?? 0}f</span>
-        <span class="rr-mod">${ml[p?.modality] || '—'}</span>`;
+        <div>
+          <div class="re-name">${name}</div>
+          <div class="re-meta">${ml[p?.modality] || '—'} · ${entry.checkpoints ?? entry.checkpoints_passed ?? 0} checkpoints</div>
+        </div>
+        <div style="text-align:right">
+          <div class="re-falls">${entry.falls ?? 0} falls</div>
+        </div>`;
       section.appendChild(row);
     }
 
