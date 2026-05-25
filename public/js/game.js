@@ -84,7 +84,7 @@ class MarbleScene extends Phaser.Scene {
     // ── Draw corridor ──────────────────────────────────────────────────────────
     const g = this.add.graphics();
 
-    // Filled rectangle per path segment (the walkable corridor)
+    // 1. Filled segment rectangles
     g.fillStyle(0x1e1a16, 1.0);
     for (let i = 0; i < pts.length - 1; i++) {
       const ax = pts[i].x,   ay = pts[i].y;
@@ -94,15 +94,17 @@ class MarbleScene extends Phaser.Scene {
       if (len === 0) continue;
       const nx = -dy/len * hw, ny = dx/len * hw;
       g.beginPath();
-      g.moveTo(ax + nx, ay + ny);
-      g.lineTo(bx + nx, by + ny);
-      g.lineTo(bx - nx, by - ny);
-      g.lineTo(ax - nx, ay - ny);
-      g.closePath();
-      g.fillPath();
+      g.moveTo(ax + nx, ay + ny); g.lineTo(bx + nx, by + ny);
+      g.lineTo(bx - nx, by - ny); g.lineTo(ax - nx, ay - ny);
+      g.closePath(); g.fillPath();
+    }
+    // 2. Filled circles at internal junctions — close the triangular gaps between segments
+    for (let i = 1; i < pts.length - 1; i++) {
+      g.fillCircle(pts[i].x, pts[i].y, hw);
     }
 
-    // Edge lines (both sides of each segment)
+    // 3. Edge lines per segment
+    g.lineStyle(3, 0xc0392b, 1.0);
     for (let i = 0; i < pts.length - 1; i++) {
       const ax = pts[i].x,   ay = pts[i].y;
       const bx = pts[i+1].x, by = pts[i+1].y;
@@ -110,9 +112,21 @@ class MarbleScene extends Phaser.Scene {
       const len = Math.hypot(dx, dy);
       if (len === 0) continue;
       const nx = -dy/len * hw, ny = dx/len * hw;
-      g.lineStyle(3, 0xc0392b, 1.0);
       g.beginPath(); g.moveTo(ax+nx, ay+ny); g.lineTo(bx+nx, by+ny); g.strokePath();
       g.beginPath(); g.moveTo(ax-nx, ay-ny); g.lineTo(bx-nx, by-ny); g.strokePath();
+    }
+    // 4. Bevel joints at internal junctions — connect edge lines across corners
+    for (let i = 1; i < pts.length - 1; i++) {
+      const ax = pts[i-1].x, ay = pts[i-1].y;
+      const bx = pts[i].x,   by = pts[i].y;
+      const cx = pts[i+1].x, cy = pts[i+1].y;
+      const l1 = Math.hypot(bx-ax, by-ay), l2 = Math.hypot(cx-bx, cy-by);
+      if (l1 === 0 || l2 === 0) continue;
+      const n1x = -(by-ay)/l1 * hw, n1y = (bx-ax)/l1 * hw;
+      const n2x = -(cy-by)/l2 * hw, n2y = (cx-bx)/l2 * hw;
+      g.lineStyle(3, 0xc0392b, 1.0);
+      g.beginPath(); g.moveTo(bx+n1x, by+n1y); g.lineTo(bx+n2x, by+n2y); g.strokePath();
+      g.beginPath(); g.moveTo(bx-n1x, by-n1y); g.lineTo(bx-n2x, by-n2y); g.strokePath();
     }
 
     // Center guide line (subtle)
@@ -121,25 +135,41 @@ class MarbleScene extends Phaser.Scene {
     pts.forEach((p, i) => i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y));
     g.strokePath();
 
-    // ── Start / End markers ────────────────────────────────────────────────────
-    const cpG = this.add.graphics();
-    // Start — filled red circle
-    cpG.fillStyle(0xc0392b, 1.0);
-    cpG.fillCircle(pts[0].x, pts[0].y, 18);
-    cpG.lineStyle(2, 0xffffff, 0.5);
-    cpG.strokeCircle(pts[0].x, pts[0].y, 18);
-    // End — filled green circle
-    cpG.fillStyle(0x27ae60, 1.0);
-    cpG.fillCircle(pts[pts.length - 1].x, pts[pts.length - 1].y, 18);
-    cpG.lineStyle(2, 0xffffff, 0.5);
-    cpG.strokeCircle(pts[pts.length - 1].x, pts[pts.length - 1].y, 18);
+    // ── Start / End zone boxes (Mario Kart style stripe across the corridor) ─────
+    const zoneG = this.add.graphics();
+    const ZD = 18; // half-depth of zone stripe along path
+
+    const _drawZone = (ptIdx, color) => {
+      const isStart = ptIdx === 0;
+      const p0 = pts[isStart ? 0 : pts.length - 2];
+      const p1 = pts[isStart ? 1 : pts.length - 1];
+      const anchor = pts[isStart ? 0 : pts.length - 1];
+      const dx = p1.x - p0.x, dy = p1.y - p0.y;
+      const len = Math.hypot(dx, dy);
+      if (len === 0) return;
+      const dirx = dx/len, diry = dy/len;
+      const nx = -diry * (hw - 3), ny = dirx * (hw - 3);
+      const sign = isStart ? 1 : -1;
+      zoneG.fillStyle(color, 0.75);
+      zoneG.beginPath();
+      zoneG.moveTo(anchor.x + nx - dirx*ZD*sign, anchor.y + ny - diry*ZD*sign);
+      zoneG.lineTo(anchor.x - nx - dirx*ZD*sign, anchor.y - ny - diry*ZD*sign);
+      zoneG.lineTo(anchor.x - nx + dirx*ZD*sign, anchor.y - ny + diry*ZD*sign);
+      zoneG.lineTo(anchor.x + nx + dirx*ZD*sign, anchor.y + ny + diry*ZD*sign);
+      zoneG.closePath();
+      zoneG.fillPath();
+    };
+    _drawZone(0, 0xc0392b);               // red start zone
+    _drawZone(pts.length - 1, 0x27ae60); // green end zone
+    zoneG.setDepth(3);
+
     // Labels
-    this.add.text(pts[0].x, pts[0].y + 28, 'START', {
-      fontSize: '11px', fontFamily: 'Barlow', color: '#c0392b', alpha: 0.9,
-    }).setOrigin(0.5, 0).setDepth(5);
-    this.add.text(pts[pts.length - 1].x, pts[pts.length - 1].y + 28, 'END', {
-      fontSize: '11px', fontFamily: 'Barlow', color: '#27ae60', alpha: 0.9,
-    }).setOrigin(0.5, 0).setDepth(5);
+    this.add.text(pts[0].x, pts[0].y + hw + 8, 'START', {
+      fontSize: '11px', fontFamily: 'Barlow', color: '#c0392b',
+    }).setOrigin(0.5, 0).setDepth(6);
+    this.add.text(pts[pts.length-1].x, pts[pts.length-1].y + hw + 8, 'END', {
+      fontSize: '11px', fontFamily: 'Barlow', color: '#27ae60',
+    }).setOrigin(0.5, 0).setDepth(6);
 
     // ── Player ball ────────────────────────────────────────────────────────────
     this._players.forEach((p) => {
@@ -165,8 +195,11 @@ class MarbleScene extends Phaser.Scene {
       };
     });
 
-    // ── HUD — timer only; falls/checkpoints shown in HTML sidebar ───────────────
-    this._timerText = this.add.text(W / 2, ARENA_M / 2, '1:30', {
+    // ── HUD timer ──────────────────────────────────────────────────────────────
+    const _initMins = Math.floor(this._cfg.roundMs / 60000);
+    const _initSecs = Math.floor((this._cfg.roundMs % 60000) / 1000);
+    this._timerText = this.add.text(W / 2, ARENA_M / 2,
+      `${_initMins}:${String(_initSecs).padStart(2,'0')}`, {
       fontSize: '18px', fontFamily: 'Barlow', color: '#f5f2ed', alpha: 0.7,
     }).setOrigin(0.5, 0.5).setDepth(20);
 
@@ -231,13 +264,12 @@ class MarbleScene extends Phaser.Scene {
         const nextIdx = s.checkpointIdx + 1;
         if (nextIdx < pts.length) {
           const np = pts[nextIdx];
-          if (Math.hypot(s.ball.x - np.x, s.ball.y - np.y) < 50) {
+          // Use larger detection zone for the finish line
+          const isEnd = nextIdx === pts.length - 1;
+          const radius = isEnd ? hw + 15 : 50;
+          if (Math.hypot(s.ball.x - np.x, s.ball.y - np.y) < radius) {
             s.checkpointIdx = nextIdx;
-            // Reached the end marker — finish the round
-            if (nextIdx === pts.length - 1) {
-              this._endGame();
-              return;
-            }
+            if (isEnd) { this._endGame(); return; }
           }
         }
       }

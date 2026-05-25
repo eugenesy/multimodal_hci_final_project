@@ -275,10 +275,20 @@ document.addEventListener('dblclick', () => {
 
 // ─── Audio tones ──────────────────────────────────────────────────────────────
 let _audioCtx = null;
+
+// iOS/Android require a user gesture before AudioContext can produce sound.
+// Create and resume it on the first touch so tones play reliably later.
+document.addEventListener('touchstart', function _unlockAudio() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  document.removeEventListener('touchstart', _unlockAudio);
+}, { passive: true });
+
 function _playTone(level) {
   if (level === 0) return;
   try {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
     const freqs = { 1: 330, 2: 440, 3: 660 };
     const durs  = { 1: 0.08, 2: 0.12, 3: 0.18 };
     const osc = _audioCtx.createOscillator();
