@@ -49,9 +49,10 @@ class MarbleScene extends Phaser.Scene {
   init(data) {
     this._players    = data.players || [];
     this._cbs        = {
-      onWallHit:         data.onWallHit         || (() => {}),  // called on each fall
+      onWallHit:         data.onWallHit         || (() => {}),
       onGameEnd:         data.onGameEnd          || (() => {}),
       onProximityChange: data.onProximityChange  || (() => {}),
+      onReady:           data.onReady            || (() => {}),
     };
     this._cfg        = LEVEL_CONFIG[data.level] || LEVEL_CONFIG[1];
     this._pathDef    = PATHS[data.level]        || PATHS[1];
@@ -60,6 +61,7 @@ class MarbleScene extends Phaser.Scene {
     this._paused     = !!data.startPaused;
     this._ended      = false;
     this._roundStart = 0;
+    this._lastTime   = 0;
   }
 
   preload() {}
@@ -119,20 +121,25 @@ class MarbleScene extends Phaser.Scene {
     pts.forEach((p, i) => i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y));
     g.strokePath();
 
-    // ── Checkpoint markers ─────────────────────────────────────────────────────
+    // ── Start / End markers ────────────────────────────────────────────────────
     const cpG = this.add.graphics();
-    pts.forEach((p, i) => {
-      if (i === 0) {
-        cpG.lineStyle(2, 0xf5f2ed, 0.6);
-        cpG.strokeCircle(p.x, p.y, 20);
-      } else if (i === pts.length - 1) {
-        cpG.lineStyle(2, 0xf5f2ed, 0.4);
-        cpG.strokeCircle(p.x, p.y, 20);
-      } else {
-        cpG.lineStyle(1.5, 0xf5f2ed, 0.3);
-        cpG.strokeCircle(p.x, p.y, 10);
-      }
-    });
+    // Start — filled red circle
+    cpG.fillStyle(0xc0392b, 1.0);
+    cpG.fillCircle(pts[0].x, pts[0].y, 18);
+    cpG.lineStyle(2, 0xffffff, 0.5);
+    cpG.strokeCircle(pts[0].x, pts[0].y, 18);
+    // End — filled green circle
+    cpG.fillStyle(0x27ae60, 1.0);
+    cpG.fillCircle(pts[pts.length - 1].x, pts[pts.length - 1].y, 18);
+    cpG.lineStyle(2, 0xffffff, 0.5);
+    cpG.strokeCircle(pts[pts.length - 1].x, pts[pts.length - 1].y, 18);
+    // Labels
+    this.add.text(pts[0].x, pts[0].y + 28, 'START', {
+      fontSize: '11px', fontFamily: 'Barlow', color: '#c0392b', alpha: 0.9,
+    }).setOrigin(0.5, 0).setDepth(5);
+    this.add.text(pts[pts.length - 1].x, pts[pts.length - 1].y + 28, 'END', {
+      fontSize: '11px', fontFamily: 'Barlow', color: '#27ae60', alpha: 0.9,
+    }).setOrigin(0.5, 0).setDepth(5);
 
     // ── Player ball ────────────────────────────────────────────────────────────
     this._players.forEach((p) => {
@@ -163,12 +170,13 @@ class MarbleScene extends Phaser.Scene {
       fontSize: '18px', fontFamily: 'Barlow', color: '#f5f2ed', alpha: 0.7,
     }).setOrigin(0.5, 0.5).setDepth(20);
 
-    this.game.events.emit('ready');
+    this._cbs.onReady(this);
   }
 
   // ─── Update ──────────────────────────────────────────────────────────────────
   update(time, delta) {
     if (this._paused || this._ended) return;
+    this._lastTime = time;
     if (this._roundStart === 0) this._roundStart = time;
     const dt  = delta / 1000;
     const pts = this._pathPts;
@@ -223,8 +231,13 @@ class MarbleScene extends Phaser.Scene {
         const nextIdx = s.checkpointIdx + 1;
         if (nextIdx < pts.length) {
           const np = pts[nextIdx];
-          if (Math.hypot(s.ball.x - np.x, s.ball.y - np.y) < 30) {
+          if (Math.hypot(s.ball.x - np.x, s.ball.y - np.y) < 50) {
             s.checkpointIdx = nextIdx;
+            // Reached the end marker — finish the round
+            if (nextIdx === pts.length - 1) {
+              this._endGame();
+              return;
+            }
           }
         }
       }
@@ -276,6 +289,9 @@ class MarbleScene extends Phaser.Scene {
   _endGame() {
     if (this._ended) return;
     this._ended = true;
+    const elapsed = this._roundStart > 0
+      ? (this._lastTime - this._roundStart)
+      : this._cfg.roundMs;
     const rankings = this._players.map(p => {
       const s = this._state[p.playerNum];
       return {
@@ -289,7 +305,7 @@ class MarbleScene extends Phaser.Scene {
         time_at_level_3_ms:  s.proxMs[3],
       };
     });
-    this._cbs.onGameEnd({ rankings, round_duration_ms: this._cfg.roundMs });
+    this._cbs.onGameEnd({ rankings, round_duration_ms: elapsed });
   }
 
   // ─── Public API (called by display.js) ───────────────────────────────────────

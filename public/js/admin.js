@@ -42,13 +42,13 @@ socket.on('ROUND_COMPLETE', ({ rankings, round }) => {
   allResults.push({ round, level: currentLevel, rankings });
   if (currentLevel) completedLevels.add(currentLevel);
   _renderResults();
-  _renderLevelButtons();
+  _updateLevelPips();
 });
 
 // ─── Controls ─────────────────────────────────────────────────────────────────
-function adminStartLevel(level) {
+function adminStartSession() {
   if (currentPhase !== 'LOBBY' || players.length < 1) return;
-  socket.emit('GAME_START', { level });
+  socket.emit('GAME_START', { level: 1 });
 }
 
 function adminBackToLobby() {
@@ -72,44 +72,37 @@ async function _loadQrCode() {
 function _setPhase(phase) {
   currentPhase = phase;
 
-  const badge    = document.getElementById('phase-badge');
-  const lobbyBtn = document.getElementById('lobby-btn');
-  const roundLbl = document.getElementById('round-label');
+  const badge       = document.getElementById('phase-badge');
+  const lobbyBtn    = document.getElementById('lobby-btn');
+  const roundLbl    = document.getElementById('round-label');
+  const startBtn    = document.getElementById('start-btn');
+  const sessionProg = document.getElementById('session-progress');
+
+  if (phase === 'LOBBY') { completedLevels = new Set(); currentRound = 0; }
 
   if (badge) {
     badge.textContent = phase === 'GAME' ? `GAME — L${currentLevel}` : 'LOBBY';
     badge.className   = phase === 'GAME' ? 'game' : '';
   }
-  if (roundLbl) roundLbl.textContent = `Round ${currentRound}`;
+  if (roundLbl) roundLbl.textContent = phase === 'GAME' ? `Level ${currentLevel} / 3` : '';
   if (lobbyBtn) lobbyBtn.style.display = phase === 'GAME' ? 'flex' : 'none';
 
-  _renderLevelButtons();
+  const canStart = phase === 'LOBBY' && players.length >= 1;
+  if (startBtn) {
+    startBtn.disabled = !canStart;
+    startBtn.style.opacity = canStart ? '1' : '0.4';
+  }
+  if (sessionProg) sessionProg.style.display = phase === 'GAME' ? 'block' : 'none';
+
+  _updateLevelPips();
 }
 
-const LEVEL_META = {
-  1: { title: 'Introductory', desc: 'S-curve · 90 s · ±80 px' },
-  2: { title: 'Moderate',     desc: 'N-shape · 75 s · ±55 px' },
-  3: { title: 'Hard',         desc: 'Zigzag · 60 s · ±35 px' },
-};
-
-function _renderLevelButtons() {
-  const container = document.getElementById('level-btns');
-  if (!container) return;
-  container.innerHTML = '';
-  [1, 2, 3].forEach(lvl => {
-    const done = completedLevels.has(lvl);
-    const meta = LEVEL_META[lvl];
-    const btn  = document.createElement('button');
-    btn.className = `level-btn${done ? ' done' : ''}`;
-    btn.disabled  = currentPhase !== 'LOBBY' || players.length < 1;
-    btn.innerHTML = `
-      <div class="lvl-num">${done ? '✓' : lvl}</div>
-      <div>
-        <div class="lvl-title">${meta.title}</div>
-        <div class="lvl-desc">${meta.desc}</div>
-      </div>`;
-    btn.addEventListener('click', () => adminStartLevel(lvl));
-    container.appendChild(btn);
+function _updateLevelPips() {
+  document.querySelectorAll('.level-pip').forEach(pip => {
+    const lvl = Number(pip.dataset.lvl);
+    pip.classList.remove('active', 'done');
+    if (completedLevels.has(lvl)) pip.classList.add('done');
+    else if (currentLevel === lvl && currentPhase === 'GAME') pip.classList.add('active');
   });
 }
 

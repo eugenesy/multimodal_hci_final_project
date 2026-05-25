@@ -51,6 +51,7 @@ socket.on('CONTROLLER_DISCONNECTED', ({ playerNum, playerName, color }) => {
 });
 
 socket.on('GYRO_DATA', ({ gamma, beta, player }) => {
+  if (!activeMazeScene && phaserGame) activeMazeScene = phaserGame.scene.getScene('MazeScene');
   if (activeMazeScene) activeMazeScene.setTilt(player, gamma, beta || 0);
 });
 
@@ -87,16 +88,14 @@ socket.on('GAME_START', ({ level } = {}) => {
       onWallHit:         _onWallHit,
       onGameEnd:         _onGameEnd,
       onProximityChange: _onProximityChange,
-    });
-
-    phaserGame.events.once('ready', () => {
-      activeMazeScene = phaserGame.scene.getScene('MazeScene');
+      onReady:           (scene) => { activeMazeScene = scene; },
     });
   });
 });
 
 socket.on('CALIBRATION_DONE', () => {
   _showCalibOverlay(false);
+  if (!activeMazeScene && phaserGame) activeMazeScene = phaserGame.scene.getScene('MazeScene');
   if (activeMazeScene) activeMazeScene.setPaused(false);
 });
 
@@ -206,33 +205,34 @@ function _renderRoundResults({ level, round_duration_ms, rankings, playerSnapsho
   const entry = rankings[0];
   const p     = playerSnapshot.find(pl => pl.playerNum === entry?.playerNum);
   const ml    = { haptic: '📳 Haptic', audio: '🔊 Audio', none: '— None' };
-  const fmt   = ms => `${(ms / 1000).toFixed(0)}s`;
+  const secs_taken = ((round_duration_ms || 0) / 1000).toFixed(1);
 
-  document.getElementById('res-title').innerHTML     = meta.name;
-  document.getElementById('res-player').textContent  = p?.playerName || '—';
+  document.getElementById('res-title').innerHTML      = meta.name;
+  document.getElementById('res-player').textContent   = p?.playerName || '—';
   document.getElementById('res-modality').textContent = ml[p?.modality] || '—';
-  document.getElementById('rstat-falls').textContent        = entry?.falls ?? 0;
-  document.getElementById('rstat-checkpoints').textContent  = entry ? `${entry.checkpoints}/${entry.totalCheckpoints}` : '—';
-  document.getElementById('rstat-duration').textContent     = fmt(round_duration_ms || 0);
-  document.getElementById('rstat-near').textContent         = fmt(entry?.time_at_level_2_ms || 0);
+  document.getElementById('rstat-duration').textContent = `${secs_taken}s`;
 
   const nextTxt = document.getElementById('res-next-txt');
   const cd      = document.getElementById('res-countdown');
   if (level < 3) {
-    if (nextTxt) nextTxt.textContent = `NEXT → LEVEL ${level + 1}`;
+    if (nextTxt) nextTxt.textContent = 'Next round in';
   } else {
-    if (nextTxt) nextTxt.textContent = 'SESSION COMPLETE';
+    if (nextTxt) nextTxt.textContent = 'Session complete in';
   }
 
-  let secs = level < 3 ? 20 : 30;
-  if (cd) cd.textContent = `Continuing in ${secs}s…`;
+  let secs = 5;
+  if (cd) cd.textContent = secs;
 
   rrTimer = setInterval(() => {
     secs--;
-    if (secs > 0 && cd) cd.textContent = `Continuing in ${secs}s…`;
+    if (cd) cd.textContent = secs > 0 ? secs : '';
     if (secs <= 0) {
       clearInterval(rrTimer);
-      _backToWaiting();
+      if (level < 3) {
+        socket.emit('AUTO_NEXT_LEVEL', { level: level + 1 });
+      } else {
+        _backToWaiting();
+      }
     }
   }, 1000);
 }

@@ -155,9 +155,11 @@ function _bindSocketEvents() {
     const ph = document.getElementById('playing-headline');
     if (ph) ph.innerHTML = names[lvl - 1];
     _setState('calibration');
+    _startAutoCalib();
   });
 
   socket.on('GAME_END', () => {
+    _gyroPhase = 'idle';
     stopAllFeedback();
     _setState('survey');
   });
@@ -177,16 +179,13 @@ function _bindSocketEvents() {
   socket.on('PING', () => socket.emit('PONG', {}));
 }
 
-// ─── Calibration ──────────────────────────────────────────────────────────────
-document.getElementById('calibrate-btn')?.addEventListener('click', () => {
-  calibGamma = currentGamma;
-  calibBeta  = currentBeta;
-  socket?.emit('CALIBRATION_DONE', {});
-  startGyroStream();
-  _setState('playing');
-});
+// ─── Gyro system ─────────────────────────────────────────────────────────────
+// _gyroPhase: 'idle' | 'calibrating' | 'sending'
+let _gyroPhase   = 'idle';
+let _calibSamples = [];
+let _calibTimer  = null;
+let _lastSent    = 0;
 
-// ─── Gyro ─────────────────────────────────────────────────────────────────────
 function _requestGyroPermission() {
   if (typeof DeviceOrientationEvent !== 'undefined' &&
       typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -202,54 +201,76 @@ function _requestGyroPermission() {
   }
 }
 
-function startGyroStream() {
-  if (gyroStarted) return;
-  gyroStarted = true;
-  let gn;
-  try {
-    gn = new GyroNorm();
-    gn.init({ frequency: 60, gravityNormalized: true, orientationBase: GyroNorm.GAME, decimalCount: 2 })
-      .then(() => {
-        gn.start(data => {
-          const raw_g = data.do.gamma ?? 0;
-          const raw_b = data.do.beta  ?? 0;
-          currentGamma = raw_g - calibGamma;
-          currentBeta  = raw_b - calibBeta;
-          _sendTilt(currentGamma, currentBeta);
-        });
-      })
-      .catch(() => _fallbackGyro());
-  } catch (_) {
-    _fallbackGyro();
+function _startAutoCalib() {
+  _gyroPhase    = 'calibrating';
+  _calibSamples = [];
+
+  if (!gyroStarted) {
+    gyroStarted = true;
+    _initGyro();
   }
+
+  let count = 3;
+  const el = document.getElementById('calib-countdown');
+  if (el) el.textContent = count;
+
+  clearInterval(_calibTimer);
+  _calibTimer = setInterval(() => {
+    count--;
+    if (el) el.textContent = count > 0 ? count : '';
+    if (count <= 0) {
+      clearInterval(_calibTimer);
+      _finishCalib();
+    }
+  }, 1000);
+}
+
+function _initGyro() {
+  try {
+    const gn = new GyroNorm();
+    gn.init({ frequency: 60, gravityNormalized: true, orientationBase: GyroNorm.GAME, decimalCount: 2 })
+      .then(() => { gn.start(data => _onRawGyro(data.do.gamma ?? 0, data.do.beta ?? 0)); })
+      .catch(() => _fallbackGyro());
+  } catch (_) { _fallbackGyro(); }
 }
 
 function _fallbackGyro() {
-  window.addEventListener('deviceorientation', e => {
-    currentGamma = (e.gamma ?? 0) - calibGamma;
-    currentBeta  = (e.beta  ?? 0) - calibBeta;
-    _sendTilt(currentGamma, currentBeta);
-  });
+  window.addEventListener('deviceorientation', e => _onRawGyro(e.gamma ?? 0, e.beta ?? 0));
 }
 
-let _lastSent = 0;
-function _sendTilt(gamma, beta) {
-  const now = Date.now();
-  if (now - _lastSent < 16) return;
-  _lastSent = now;
-  if (DEBUG) {
-    const dg = document.getElementById('debug-gamma');
-    const db = document.getElementById('debug-beta');
-    if (dg) dg.textContent = gamma.toFixed(1) + '°';
-    if (db) db.textContent = beta.toFixed(1)  + '°';
+function _onRawGyro(raw_g, raw_b) {
+  if (_gyroPhase === 'calibrating') {
+    _calibSamples.push({ g: raw_g, b: raw_b });
+  } else if (_gyroPhase === 'sending') {
+    currentGamma = raw_g - calibGamma;
+    currentBeta  = raw_b - calibBeta;
+    const now = Date.now();
+    if (now - _lastSent < 16) return;
+    _lastSent = now;
+    if (DEBUG) {
+      const dg = document.getElementById('debug-gamma');
+      const db = document.getElementById('debug-beta');
+      if (dg) dg.textContent = currentGamma.toFixed(1) + '°';
+      if (db) db.textContent = currentBeta.toFixed(1)  + '°';
+    }
+    socket?.emit('GYRO_DATA', { gamma: currentGamma, beta: currentBeta });
   }
-  socket?.emit('GYRO_DATA', { gamma, beta });
+}
+
+function _finishCalib() {
+  if (_calibSamples.length > 0) {
+    calibGamma = _calibSamples.reduce((s, v) => s + v.g, 0) / _calibSamples.length;
+    calibBeta  = _calibSamples.reduce((s, v) => s + v.b, 0) / _calibSamples.length;
+  }
+  _gyroPhase = 'sending';
+  socket?.emit('CALIBRATION_DONE', {});
+  _setState('playing');
 }
 
 // ─── Double-tap recalibration ─────────────────────────────────────────────────
 document.addEventListener('dblclick', () => {
-  calibGamma = currentGamma + calibGamma;
-  calibBeta  = currentBeta  + calibBeta;
+  calibGamma += currentGamma;
+  calibBeta  += currentBeta;
 });
 
 // ─── Audio tones ──────────────────────────────────────────────────────────────

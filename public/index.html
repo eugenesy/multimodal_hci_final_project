@@ -133,7 +133,7 @@
       align-items: center;
       justify-content: center;
       gap: 12px;
-      z-index: 50;
+      z-index: 9999;
     }
     #calib-overlay.active { display: flex; }
     #calib-overlay-title {
@@ -156,8 +156,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       align-items: center;
-      padding: 40px 60px;
-      gap: 48px;
+      padding: 60px 80px;
+      gap: 60px;
     }
     #res-eyebrow {
       font-family: 'Barlow', sans-serif;
@@ -291,28 +291,26 @@
       <div id="res-rule"></div>
       <div id="res-player">—</div>
       <div id="res-modality"></div>
+      <div style="margin-top:28px">
+        <div id="rstat-duration" style="
+          font-family:'Syne',sans-serif;font-size:48px;font-weight:800;
+          color:var(--black);line-height:1;">—</div>
+        <div style="font-family:'Barlow',sans-serif;font-size:13px;
+          color:var(--gray);letter-spacing:0.1em;text-transform:uppercase;margin-top:6px">
+          Time
+        </div>
+      </div>
     </div>
-    <div id="res-stats">
-      <div class="res-stat-box">
-        <div class="res-stat-val red" id="rstat-falls">0</div>
-        <div class="res-stat-key">Falls</div>
+    <div id="res-right" style="
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+      <div id="res-next-txt" style="
+        font-family:'Barlow',sans-serif;font-size:13px;font-weight:300;
+        color:var(--gray);letter-spacing:0.1em;text-transform:uppercase;">
+        Next round in
       </div>
-      <div class="res-stat-box">
-        <div class="res-stat-val" id="rstat-checkpoints">—</div>
-        <div class="res-stat-key">Checkpoints</div>
-      </div>
-      <div class="res-stat-box">
-        <div class="res-stat-val" id="rstat-duration">—</div>
-        <div class="res-stat-key">Duration</div>
-      </div>
-      <div class="res-stat-box">
-        <div class="res-stat-val" id="rstat-near">—</div>
-        <div class="res-stat-key">Time Near Edge</div>
-      </div>
-      <div id="res-next">
-        <div id="res-next-txt">NEXT → LEVEL 2</div>
-        <div id="res-countdown">Continuing in 20s…</div>
-      </div>
+      <div id="res-countdown" style="
+        font-family:'Syne',sans-serif;font-size:120px;font-weight:800;
+        color:var(--red);line-height:1;text-align:center;">5</div>
     </div>
   </div>
 

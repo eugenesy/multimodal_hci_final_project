@@ -277,6 +277,17 @@ function handlePcConnection(socket) {
 
   socket.on('FEEDBACK_EVENT', ({ playerNum, feedbackType }) => routeFeedbackEvent(playerNum, feedbackType));
 
+  socket.on('AUTO_NEXT_LEVEL', ({ level }) => {
+    if (session.phase !== 'LOBBY') return;
+    session.phase = 'GAME';
+    session.round++;
+    const lvl = Math.min(3, Math.max(1, Number(level) || 1));
+    socket.emit('GAME_START', { level: lvl });
+    io.to('game').emit('GAME_START', { level: lvl });
+    if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'GAME', round: session.round, level: lvl });
+    console.log(`[Session] Auto-advancing to Level ${lvl} (Round ${session.round})`);
+  });
+
   socket.on('disconnect', () => {
     console.log('[PC] Display disconnected');
     if (pcSocket === socket) pcSocket = null;
@@ -303,7 +314,8 @@ function handleAdminConnection(socket) {
 
   socket.on('BACK_TO_LOBBY', () => {
     session.phase = 'LOBBY';
-    if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'LOBBY' });
+    session.round = 0;
+    if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'LOBBY', round: 0 });
   });
 
   socket.on('disconnect', () => {

@@ -243,6 +243,21 @@
     }
     .export-btn:hover { background: #ede9e2; }
 
+    /* ── Level pips ── */
+    .level-pip {
+      flex: 1;
+      padding: 8px 0;
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      border: 1.5px solid var(--rule);
+      color: var(--rule);
+    }
+    .level-pip.active { border-color: var(--red); color: var(--red); }
+    .level-pip.done   { border-color: var(--black); color: var(--black); background: #ede9e2; }
+
     /* ── Toast ── */
     #notification {
       display: none; position: fixed; bottom: 20px; left: 50%;
@@ -278,10 +293,23 @@
       <div id="url-single"></div>
     </div>
 
-    <!-- Col 2: Levels -->
+    <!-- Col 2: Session control -->
     <div class="admin-col">
-      <div class="col-title">Levels</div>
-      <div id="level-btns" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div class="col-title">Session</div>
+      <button id="start-btn" class="level-btn" onclick="adminStartSession()" disabled>
+        <div class="lvl-num">▶</div>
+        <div>
+          <div class="lvl-title">Start Session</div>
+          <div class="lvl-desc">Levels 1 → 2 → 3 auto-advance</div>
+        </div>
+      </button>
+      <div id="session-progress" style="display:none">
+        <div id="level-pip-row" style="display:flex;gap:8px;margin-bottom:10px">
+          <div class="level-pip" data-lvl="1">L1</div>
+          <div class="level-pip" data-lvl="2">L2</div>
+          <div class="level-pip" data-lvl="3">L3</div>
+        </div>
+      </div>
       <div id="lobby-btn" onclick="adminBackToLobby()" style="display:none">
         <div id="lobby-btn-label">Session reset</div>
         <div id="lobby-btn-action">→ LOBBY</div>
