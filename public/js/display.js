@@ -38,7 +38,6 @@ socket.on('SESSION_RESTORE', ({ players: list }) => {
 
 socket.on('PLAYERS_UPDATE', ({ players: list }) => {
   players = list || [];
-  if (players.length && currentState === STATE.WAITING) sessionId = `S${Date.now()}`;
   if (currentState === STATE.WAITING) _renderWaiting();
 });
 
@@ -55,7 +54,8 @@ socket.on('GYRO_DATA', ({ gamma, beta, player }) => {
   if (activeMazeScene) activeMazeScene.setTilt(player, gamma, beta || 0);
 });
 
-socket.on('GAME_START', ({ level } = {}) => {
+socket.on('GAME_START', ({ level, sessionId: sid } = {}) => {
+  if (sid) sessionId = sid;
   currentRound++;
   currentLevel = Math.min(3, Math.max(1, Number(level) || 1));
   _destroyPhaser();
@@ -163,11 +163,11 @@ function _onProximityChange(playerNum, level) {
   socket.emit('PROXIMITY_UPDATE', { playerNum, level });
 }
 
-function _onGameEnd({ rankings, round_duration_ms }) {
+function _onGameEnd({ rankings, round_duration_ms, trajectory }) {
   socket.emit('GAME_END');
   socket.emit('ROUND_COMPLETE', { rankings });
 
-  const result = { round: currentRound, level: currentLevel, round_duration_ms, rankings, playerSnapshot: [...players] };
+  const result = { round: currentRound, level: currentLevel, round_duration_ms, trajectory, rankings, playerSnapshot: [...players] };
   roundResults.push(result);
   _exportRoundCsv(result);
 
@@ -175,7 +175,7 @@ function _onGameEnd({ rankings, round_duration_ms }) {
   _renderRoundResults(result);
 }
 
-function _exportRoundCsv({ round, level, round_duration_ms, rankings, playerSnapshot }) {
+function _exportRoundCsv({ round, level, round_duration_ms, trajectory, rankings, playerSnapshot }) {
   const ts = new Date().toISOString();
   rankings.forEach(entry => {
     const p = playerSnapshot.find(pl => pl.playerNum === entry.playerNum);
@@ -195,6 +195,7 @@ function _exportRoundCsv({ round, level, round_duration_ms, rankings, playerSnap
       time_at_level_2_ms: entry.time_at_level_2_ms || 0,
       time_at_level_3_ms: entry.time_at_level_3_ms || 0,
       session_timestamp:  ts,
+      trajectory:         trajectory || [],
     });
   });
 }

@@ -56,12 +56,14 @@ class MarbleScene extends Phaser.Scene {
     };
     this._cfg        = LEVEL_CONFIG[data.level] || LEVEL_CONFIG[1];
     this._pathDef    = PATHS[data.level]        || PATHS[1];
-    this._tilt       = {};
-    this._state      = {};
-    this._paused     = !!data.startPaused;
-    this._ended      = false;
-    this._roundStart = 0;
-    this._lastTime   = 0;
+    this._tilt              = {};
+    this._state             = {};
+    this._paused            = !!data.startPaused;
+    this._ended             = false;
+    this._roundStart        = 0;
+    this._lastTime          = 0;
+    this._trajectory        = [];
+    this._lastTrajectoryMs  = 0;
   }
 
   preload() {}
@@ -71,6 +73,7 @@ class MarbleScene extends Phaser.Scene {
     const H  = this.scale.height;
     const AX = ARENA_M, AY = ARENA_M, AR = W - ARENA_M, AB = H - ARENA_M;
     const AW = AR - AX, AH = AB - AY;
+    this._AX = AX; this._AY = AY; this._AW = AW; this._AH = AH;
 
     // Scale fractional path coordinates to real px
     this._pathPts = this._pathDef.map(({fx, fy}) => ({
@@ -222,6 +225,22 @@ class MarbleScene extends Phaser.Scene {
     this._timerText.setText(`${mins}:${String(secs).padStart(2, '0')}`);
     if (left <= 0) { this._endGame(); return; }
 
+    // Trajectory sampling at 10Hz (every 100ms)
+    const t_ms = Math.round(time - this._roundStart);
+    if (t_ms - this._lastTrajectoryMs >= 100 && this._players.length > 0) {
+      this._lastTrajectoryMs = t_ms;
+      const p0 = this._players[0];
+      const s0 = this._state[p0.playerNum];
+      if (s0) {
+        this._trajectory.push({
+          t_ms,
+          x_frac: +((s0.ball.x - this._AX) / this._AW).toFixed(4),
+          y_frac: +((s0.ball.y - this._AY) / this._AH).toFixed(4),
+          proximity_level: s0.proxLevel,
+        });
+      }
+    }
+
     for (const p of this._players) {
       const s       = this._state[p.playerNum];
       const tilt    = this._tilt[p.playerNum] || { gamma: 0, beta: 0 };
@@ -337,7 +356,7 @@ class MarbleScene extends Phaser.Scene {
         time_at_level_3_ms:  s.proxMs[3],
       };
     });
-    this._cbs.onGameEnd({ rankings, round_duration_ms: elapsed });
+    this._cbs.onGameEnd({ rankings, round_duration_ms: elapsed, trajectory: this._trajectory });
   }
 
   // ─── Public API (called by display.js) ───────────────────────────────────────
