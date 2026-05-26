@@ -8,6 +8,7 @@ const qrcode     = require('qrcode');
 const os         = require('os');
 const fs         = require('fs');
 const path       = require('path');
+const crypto     = require('crypto');
 
 const PORT = 3000;
 
@@ -28,17 +29,27 @@ if (fs.existsSync(CERT_PATH) && fs.existsSync(KEY_PATH)) {
 const COLORS     = ['#00cfff','#ff6b35','#00ff88','#cc44ff','#ffdd00','#ff4455','#ff88cc','#e0e0e0'];
 const MODALITIES = ['haptic', 'audio', 'none'];
 
-const DATA_DIR      = path.join(__dirname, 'data');
-const HISTORY_PATH  = path.join(DATA_DIR, 'players.json');
-const SURVEY_PATH   = path.join(DATA_DIR, 'survey_responses.jsonl');
+const DATA_DIR     = path.join(__dirname, 'data');
+const HISTORY_PATH = path.join(DATA_DIR, 'players.json');
+const SURVEY_PATH  = path.join(DATA_DIR, 'survey_responses.jsonl');
+
+// ─── CSV helpers ──────────────────────────────────────────────────────────────
+// RFC 4180: wrap field in quotes if it contains comma, double-quote, or newline.
+function csvField(v) {
+  const s = String(v ?? '');
+  return (s.includes(',') || s.includes('"') || s.includes('\n'))
+    ? '"' + s.replace(/"/g, '""') + '"'
+    : s;
+}
 
 // ─── Session state ────────────────────────────────────────────────────────────
 let pcSocket    = null;
 let adminSocket = null;
-const players      = new Map();   // socketId → PlayerState
-const lastGyroTime = new Map();   // socketId → timestamp
-let playerHistory  = {};          // playerId → { playCount, modalitiesExperienced, devices }
-let session        = { phase: 'LOBBY', round: 0 };
+const players         = new Map();  // socketId → PlayerState
+const lastGyroTime    = new Map();  // socketId → timestamp
+const _exportedRounds = new Set();  // "sessionId:round:playerId" dedup keys
+let playerHistory     = {};         // playerId → { playCount, modalitiesExperienced, devices }
+let session           = { phase: 'LOBBY', round: 0, sessionId: '' };
 
 // ─── Player history persistence ───────────────────────────────────────────────
 function loadPlayerHistory() {
@@ -53,12 +64,12 @@ function loadPlayerHistory() {
   }
 }
 
-function savePlayerHistory() {
+async function savePlayerHistory() {
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    await fs.promises.mkdir(DATA_DIR, { recursive: true });
     const tmp = HISTORY_PATH + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(playerHistory, null, 2), 'utf8');
-    fs.renameSync(tmp, HISTORY_PATH);
+    await fs.promises.writeFile(tmp, JSON.stringify(playerHistory, null, 2), 'utf8');
+    await fs.promises.rename(tmp, HISTORY_PATH);
   } catch (e) {
     console.error('[History] Save failed:', e.message);
   }
@@ -71,11 +82,11 @@ function getOrInitHistory(playerId) {
   return playerHistory[playerId];
 }
 
-function updateHistoryOnRoundComplete(playerId, modality) {
+async function updateHistoryOnRoundComplete(playerId, modality) {
   const h = getOrInitHistory(playerId);
   h.playCount++;
   if (!h.modalitiesExperienced.includes(modality)) h.modalitiesExperienced.push(modality);
-  savePlayerHistory();
+  await savePlayerHistory();
 }
 
 // ─── Player assignment helpers ────────────────────────────────────────────────
@@ -134,16 +145,37 @@ function routeProximity(playerNum, level) {
 function routeFeedbackEvent(playerNum, feedbackType) {
   const p = getPlayerByNum(playerNum);
   if (!p) return;
-  if (feedbackType === 'wall_hit') {
-    routeProximity(playerNum, 4);
-  }
+  if (feedbackType === 'wall_hit') routeProximity(playerNum, 4);
 }
 
-// ─── CSV ──────────────────────────────────────────────────────────────────────
+// ─── Round validation ─────────────────────────────────────────────────────────
+function validateRoundRow(row) {
+  const errors = [];
+  const nonNegFields = ['falls', 'checkpoints_passed', 'round_duration_ms',
+    'time_at_level_1_ms', 'time_at_level_2_ms', 'time_at_level_3_ms'];
+  for (const f of nonNegFields) {
+    const v = Number(row[f]);
+    if (!Number.isFinite(v) || v < 0) errors.push(`${f}=${row[f]}`);
+  }
+  if (!Number.isFinite(Number(row.score))) errors.push(`score=${row.score}`);
+  if (![1, 2, 3].includes(Number(row.difficulty_level))) errors.push(`difficulty_level=${row.difficulty_level}`);
+  if (!row.player_id)  errors.push('player_id empty');
+  if (!row.session_id) errors.push('session_id empty');
+  if (!['haptic', 'audio', 'none'].includes(row.modality)) errors.push(`modality=${row.modality}`);
+  return { valid: errors.length === 0, errors };
+}
+
+// ─── CSV paths & headers ──────────────────────────────────────────────────────
 function csvPath() {
   const d = new Date();
   const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
   return path.join(DATA_DIR, `results_${stamp}.csv`);
+}
+
+function trajectoryCsvPath() {
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  return path.join(DATA_DIR, `trajectories_${stamp}.csv`);
 }
 
 const CSV_HEADERS = 'session_id,round,difficulty_level,round_duration_ms,' +
@@ -152,25 +184,28 @@ const CSV_HEADERS = 'session_id,round,difficulty_level,round_duration_ms,' +
   'time_at_level_1_ms,time_at_level_2_ms,time_at_level_3_ms,' +
   'os,os_version,device_model,screen_res,pixel_ratio,browser,session_timestamp\n';
 
-function appendResultsToCsv(row) {
+const TRAJECTORY_HEADERS = 'session_id,round,difficulty_level,player_id,t_ms,x_frac,y_frac,proximity_level\n';
+
+// ─── CSV writers ──────────────────────────────────────────────────────────────
+async function appendResultsToCsv(row) {
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    await fs.promises.mkdir(DATA_DIR, { recursive: true });
     const p = csvPath();
-    if (!fs.existsSync(p)) fs.writeFileSync(p, CSV_HEADERS, 'utf8');
+    try { await fs.promises.access(p); } catch { await fs.promises.writeFile(p, CSV_HEADERS, 'utf8'); }
     const line = [
-      row.session_id           || '',
-      row.round                || 0,
-      row.difficulty_level     || 1,
-      row.round_duration_ms    || 0,
-      row.player_id            || '',
+      row.session_id,
+      row.round                ?? 0,
+      row.difficulty_level     ?? 1,
+      row.round_duration_ms    ?? 0,
+      row.player_id,
       row.player_name          || '',
       row.modality             || 'none',
-      row.checkpoints_passed   || 0,
-      row.falls                || 0,
-      row.score                || 0,
-      row.time_at_level_1_ms   || 0,
-      row.time_at_level_2_ms   || 0,
-      row.time_at_level_3_ms   || 0,
+      row.checkpoints_passed   ?? 0,
+      row.falls                ?? 0,
+      row.score                ?? 0,
+      row.time_at_level_1_ms   ?? 0,
+      row.time_at_level_2_ms   ?? 0,
+      row.time_at_level_3_ms   ?? 0,
       row.os                   || '',
       row.os_version           || '',
       row.device_model         || '',
@@ -178,10 +213,26 @@ function appendResultsToCsv(row) {
       row.pixel_ratio          || '',
       row.browser              || '',
       row.session_timestamp    || new Date().toISOString(),
-    ].join(',') + '\n';
-    fs.appendFileSync(p, line, 'utf8');
+    ].map(csvField).join(',') + '\n';
+    await fs.promises.appendFile(p, line, 'utf8');
   } catch (e) {
     console.error('[CSV] Write failed:', e.message);
+  }
+}
+
+async function appendTrajectoryCsv(rows, meta) {
+  try {
+    await fs.promises.mkdir(DATA_DIR, { recursive: true });
+    const p = trajectoryCsvPath();
+    try { await fs.promises.access(p); } catch { await fs.promises.writeFile(p, TRAJECTORY_HEADERS, 'utf8'); }
+    const lines = rows.map(r =>
+      [meta.session_id, meta.round, meta.difficulty_level, meta.player_id,
+       r.t_ms, r.x_frac, r.y_frac, r.proximity_level]
+      .map(csvField).join(',') + '\n'
+    ).join('');
+    await fs.promises.appendFile(p, lines, 'utf8');
+  } catch (e) {
+    console.error('[Trajectory] Write failed:', e.message);
   }
 }
 
@@ -189,21 +240,21 @@ function appendResultsToCsv(row) {
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/',            (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/admin',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/controller',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'controller.html')));
+app.get('/',           (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/admin',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/controller', (req, res) => res.sendFile(path.join(__dirname, 'public', 'controller.html')));
 
-app.get('/cert', (req, res) => {
-  if (!fs.existsSync(CERT_PATH)) return res.status(404).send('No cert found.');
+app.get('/cert', async (req, res) => {
+  try { await fs.promises.access(CERT_PATH); } catch { return res.status(404).send('No cert found.'); }
   res.setHeader('Content-Type', 'application/x-x509-ca-cert');
   res.setHeader('Content-Disposition', 'attachment; filename="bsh.crt"');
   res.sendFile(CERT_PATH);
 });
 
 app.get('/qr', async (req, res) => {
-  const ip       = getLocalIp();
-  const proto    = useHttps ? 'https' : 'http';
-  const url      = `${proto}://${ip}:${PORT}/controller`;
+  const ip    = getLocalIp();
+  const proto = useHttps ? 'https' : 'http';
+  const url   = `${proto}://${ip}:${PORT}/controller`;
   try {
     const qr = await qrcode.toDataURL(url, { width: 300, margin: 2 });
     res.json({ url, qr });
@@ -212,16 +263,16 @@ app.get('/qr', async (req, res) => {
   }
 });
 
-app.get('/export-csv', (req, res) => {
+app.get('/export-csv', async (req, res) => {
   const p = csvPath();
-  if (!fs.existsSync(p)) return res.status(404).send('No data yet.');
+  try { await fs.promises.access(p); } catch { return res.status(404).send('No data yet.'); }
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${path.basename(p)}"`);
   res.sendFile(p);
 });
 
-app.get('/export-survey', (req, res) => {
-  if (!fs.existsSync(SURVEY_PATH)) return res.status(404).send('No survey responses yet.');
+app.get('/export-survey', async (req, res) => {
+  try { await fs.promises.access(SURVEY_PATH); } catch { return res.status(404).send('No survey responses yet.'); }
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', 'attachment; filename="survey_responses.jsonl"');
   res.sendFile(SURVEY_PATH);
@@ -230,6 +281,19 @@ app.get('/export-survey', (req, res) => {
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 const server = useHttps ? https.createServer(serverOptions, app) : http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
+
+// ─── Session advance (single owner of session.round++) ────────────────────────
+// Generates a new session UUID only when starting fresh (sessionId is empty).
+function _advanceRound(level) {
+  session.phase = 'GAME';
+  session.round++;
+  if (!session.sessionId) session.sessionId = crypto.randomUUID();
+  const lvl = Math.min(3, Math.max(1, Number(level) || 1));
+  if (pcSocket) pcSocket.emit('GAME_START', { level: lvl, sessionId: session.sessionId });
+  io.to('game').emit('GAME_START', { level: lvl, sessionId: session.sessionId });
+  if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'GAME', round: session.round, level: lvl });
+  console.log(`[Session] Round ${session.round} started (Level ${lvl}) session=${session.sessionId}`);
+}
 
 io.on('connection', (socket) => {
   const role = socket.handshake.query.role;
@@ -250,42 +314,67 @@ function handlePcConnection(socket) {
     session.phase = 'LOBBY';
     io.to('game').emit('GAME_END', {});
     if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'LOBBY' });
-    console.log('[Session] Game ended → LOBBY');
+    console.log('[Session] Game ended (Level 3 complete) → LOBBY');
+  });
+
+  socket.on('ROUND_END', () => {
+    session.phase = 'LOBBY';
+    if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'LOBBY' });
+    console.log('[Session] Round ended (mid-session) → LOBBY');
   });
 
   socket.on('ROUND_COMPLETE', ({ rankings }) => {
-    // Update history for each player
-    for (const entry of rankings) {
-      const p = getPlayerByNum(entry.playerNum);
-      if (p) updateHistoryOnRoundComplete(p.playerId, p.modality);
-    }
+    Promise.all(
+      (rankings || []).map(entry => {
+        const p = getPlayerByNum(entry.playerNum);
+        return p ? updateHistoryOnRoundComplete(p.playerId, p.modality) : Promise.resolve();
+      })
+    ).catch(e => console.error('[History] Update failed:', e.message));
     if (adminSocket) adminSocket.emit('ROUND_COMPLETE', { rankings, round: session.round });
   });
 
-  socket.on('EXPORT_RESULTS', (row) => {
-    // Augment with device info held server-side (not sent to display)
+  socket.on('EXPORT_RESULTS', async (row) => {
+    // Augment with server-side device info (not sent to display)
     for (const p of players.values()) {
-      if (p.playerId === row.player_id) {
-        row = { ...row, ...p.deviceInfo };
-        break;
-      }
+      if (p.playerId === row.player_id) { row = { ...row, ...p.deviceInfo }; break; }
     }
-    appendResultsToCsv(row);
+
+    // Ensure session_id is server-authoritative
+    row.session_id = session.sessionId || row.session_id || '';
+
+    // Dedup guard — prevent duplicate rows from network retries
+    const dedupKey = `${row.session_id}:${row.round}:${row.player_id}`;
+    if (_exportedRounds.has(dedupKey)) {
+      console.warn(`[CSV] Duplicate export ignored (${dedupKey})`);
+      return;
+    }
+    _exportedRounds.add(dedupKey);
+
+    // Validate before writing
+    const { valid, errors } = validateRoundRow(row);
+    if (!valid) {
+      console.error('[CSV] Invalid round row — dropped:', errors.join(', '));
+      return;
+    }
+
+    await appendResultsToCsv(row);
+
+    if (Array.isArray(row.trajectory) && row.trajectory.length > 0) {
+      await appendTrajectoryCsv(row.trajectory, {
+        session_id:       row.session_id,
+        round:            row.round,
+        difficulty_level: row.difficulty_level,
+        player_id:        row.player_id,
+      });
+    }
   });
 
   socket.on('PROXIMITY_UPDATE', ({ playerNum, level }) => routeProximity(playerNum, level));
-
-  socket.on('FEEDBACK_EVENT', ({ playerNum, feedbackType }) => routeFeedbackEvent(playerNum, feedbackType));
+  socket.on('FEEDBACK_EVENT',   ({ playerNum, feedbackType }) => routeFeedbackEvent(playerNum, feedbackType));
 
   socket.on('AUTO_NEXT_LEVEL', ({ level }) => {
     if (session.phase !== 'LOBBY') return;
-    session.phase = 'GAME';
-    session.round++;
-    const lvl = Math.min(3, Math.max(1, Number(level) || 1));
-    socket.emit('GAME_START', { level: lvl });
-    io.to('game').emit('GAME_START', { level: lvl });
-    if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'GAME', round: session.round, level: lvl });
-    console.log(`[Session] Auto-advancing to Level ${lvl} (Round ${session.round})`);
+    _advanceRound(level);
   });
 
   socket.on('disconnect', () => {
@@ -303,18 +392,14 @@ function handleAdminConnection(socket) {
 
   socket.on('GAME_START', ({ level } = {}) => {
     if (session.phase !== 'LOBBY') return;
-    session.phase = 'GAME';
-    session.round++;
-    const lvl = Math.min(3, Math.max(1, Number(level) || 1));
-    if (pcSocket) pcSocket.emit('GAME_START', { level: lvl });
-    io.to('game').emit('GAME_START', { level: lvl });
-    if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'GAME', round: session.round, level: lvl });
-    console.log(`[Session] Round ${session.round} started (Level ${lvl})`);
+    _advanceRound(level);
   });
 
   socket.on('BACK_TO_LOBBY', () => {
-    session.phase = 'LOBBY';
-    session.round = 0;
+    session.phase     = 'LOBBY';
+    session.round     = 0;
+    session.sessionId = '';
+    _exportedRounds.clear();
     if (adminSocket) adminSocket.emit('PHASE_CHANGE', { phase: 'LOBBY', round: 0 });
   });
 
@@ -353,10 +438,9 @@ function handleControllerConnection(socket) {
   const color     = assignColor(playerNum);
   const modality  = assignModality(canVibrate, history.modalitiesExperienced);
 
-  // Persist device info
   const device = `${q.os||'?'} ${q.device_model||''} ${q.screen_res||''}`.trim();
   if (!history.devices.includes(device)) history.devices.push(device);
-  savePlayerHistory();
+  savePlayerHistory().catch(e => console.error('[History] Device save failed:', e.message));
 
   const state = {
     socket,
@@ -403,22 +487,22 @@ function handleControllerConnection(socket) {
     console.log(`[Controller] P${playerNum} calibration done`);
   });
 
-  socket.on('SURVEY_RESPONSE', (payload) => {
-    const { response, playerNum, modality, timestamp, play_count, demographics } = payload || {};
+  socket.on('SURVEY_RESPONSE', async (payload) => {
+    const { response, playerNum: pNum, modality: pMod, timestamp, play_count, demographics } = payload || {};
     if (!response) return;
     try {
-      if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+      await fs.promises.mkdir(DATA_DIR, { recursive: true });
       const entry = JSON.stringify({
         timestamp:    timestamp || new Date().toISOString(),
-        session_id:   session.round > 0 ? `round_${session.round}` : 'lobby',
-        playerNum,
-        modality:     modality || 'unknown',
+        session_id:   session.sessionId || '',
+        playerNum:    pNum,
+        modality:     pMod || 'unknown',
         play_count:   play_count ?? null,
         demographics: demographics || null,
         response,
       });
-      fs.appendFileSync(SURVEY_PATH, entry + '\n', 'utf8');
-      console.log(`[Survey] P${playerNum} (${modality}): ${response.slice(0, 60)}${response.length > 60 ? '…' : ''}`);
+      await fs.promises.appendFile(SURVEY_PATH, entry + '\n', 'utf8');
+      console.log(`[Survey] P${pNum} (${pMod}): ${response.slice(0, 60)}${response.length > 60 ? '…' : ''}`);
     } catch (e) {
       console.error('[Survey] Save failed:', e.message);
     }
