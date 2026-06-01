@@ -85,7 +85,9 @@ function initDb() {
       t_ms             INTEGER,
       x_frac           REAL,
       y_frac           REAL,
-      proximity_level  INTEGER
+      proximity_level  INTEGER,
+      gamma            REAL,
+      beta             REAL
     );
     CREATE TABLE IF NOT EXISTS surveys (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,6 +96,9 @@ function initDb() {
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
     );
   `);
+  // Add tilt columns to existing trajectories table (for existing databases)
+  try { db.exec('ALTER TABLE trajectories ADD COLUMN gamma REAL'); } catch {}
+  try { db.exec('ALTER TABLE trajectories ADD COLUMN beta REAL'); } catch {}
 }
 
 const _dbUpsertSession = () => db.prepare(`
@@ -126,12 +131,12 @@ function dbSaveRound(row) {
 function dbSaveTrajectories(points, meta) {
   if (!points?.length) return;
   const stmt = db.prepare(`
-    INSERT INTO trajectories (session_id,round,difficulty_level,t_ms,x_frac,y_frac,proximity_level)
-    VALUES (?,?,?,?,?,?,?)
+    INSERT INTO trajectories (session_id,round,difficulty_level,t_ms,x_frac,y_frac,proximity_level,gamma,beta)
+    VALUES (?,?,?,?,?,?,?,?,?)
   `);
   db.transaction(() => {
     for (const p of points)
-      stmt.run(meta.session_id, meta.round, meta.difficulty_level, p.t_ms, p.x_frac, p.y_frac, p.proximity_level);
+      stmt.run(meta.session_id, meta.round, meta.difficulty_level, p.t_ms, p.x_frac, p.y_frac, p.proximity_level, p.gamma ?? 0, p.beta ?? 0);
   })();
 }
 

@@ -3,43 +3,54 @@
 // ─── Fixed constants ──────────────────────────────────────────────────────────
 const BALL_R       = 14;    // px — ball collision radius
 const BALL_ACCEL   = 40;    // px/s² per degree of tilt
-const BALL_MAX_SPD = 200;   // px/s — lower cap; precision task, not a speed game
+const BALL_MAX_SPD = 120;   // px/s — capped low; precision task, not a speed game
 const STUN_MS      = 1200;  // ms — stun on fall (longer than maze hit to feel like a penalty)
 const ARENA_M      = 60;    // px — margin from screen edge
-const PROX_HYST    = 6;     // px — hysteresis band to prevent level flicker
-// FIXED across all difficulty levels — keeps time_at_level_X_ms comparable across
-// conditions. Gap = (halfWidth − distToPath): same absolute px-from-edge at each level.
-const PROX_T = [40, 20, 8]; // px from path edge: NEAR / WARN / DANGER
+// Proximity thresholds as fraction of halfWidth — scales with corridor width so
+// there is always a feedback-free safe zone in the centre of the corridor.
+// Gap = halfWidth − distToPath: 0 at edge, halfWidth at centreline.
+// Level fires when gap < PROX_T_PCT[i] * halfWidth.
+// 0.50 → outer 50% of half-corridor triggers NEAR (safe zone = inner 50%)
+// 0.28 → outer 28% triggers WARN
+// 0.12 → outer 12% triggers DANGER
+const PROX_T_PCT  = [0.50, 0.28, 0.12];
+const PROX_HYST_PCT = 0.08; // hysteresis as fraction of halfWidth (~8%)
 
 // ─── Per-level difficulty configs ─────────────────────────────────────────────
 // Only halfWidth (corridor width), drag (ball inertia), and round duration vary.
 // Narrower halfWidth + higher drag = requires more precise and anticipatory tilt.
-// NOTE: On Level 3 (halfWidth=35 < PROX_T[0]=40), the ball is always in at least
-// NEAR proximity — there is no feedback-free zone. This is intentional difficulty.
+// Level 1 = practice round (same difficulty as L2, no feedback routed by server).
+// Levels 2–4 = experimental rounds with assigned modality.
 const LEVEL_CONFIG = {
-  1: { halfWidth: 80, drag: 2.5, roundMs: 90_000 },
-  2: { halfWidth: 55, drag: 2.0, roundMs: 75_000 },
-  3: { halfWidth: 35, drag: 1.5, roundMs: 60_000 },
+  1: { halfWidth: 80, drag: 2.5, roundMs: 90_000 },  // practice (easy, recorded silently)
+  2: { halfWidth: 80, drag: 2.5, roundMs: 90_000 },  // experimental easy
+  3: { halfWidth: 55, drag: 2.0, roundMs: 75_000 },  // experimental medium
+  4: { halfWidth: 35, drag: 1.5, roundMs: 60_000 },  // experimental hard
 };
 
-// ─── Pre-designed paths (one per level) ──────────────────────────────────────
+// ─── Pre-designed paths ───────────────────────────────────────────────────────
 // Waypoints as fractions of arena dimensions. Scaled to px in create().
 // Index 0 = START (spawn), all subsequent indices are checkpoints, last = END.
+// L1 (practice) and L2 (easy) share the same path — participant knows the route,
+// isolating feedback as the only variable between those two rounds.
 const PATHS = {
-  1: [ // gentle S-curve — 4 checkpoints
+  1: [ // gentle S-curve — shared by practice (L1) and easy (L2)
     {fx:0.10,fy:0.50}, {fx:0.28,fy:0.20}, {fx:0.50,fy:0.50},
     {fx:0.72,fy:0.80}, {fx:0.90,fy:0.50},
   ],
-  2: [ // N-shape with steeper angles — 4 checkpoints
+  2: [ // N-shape — medium (L3)
     {fx:0.10,fy:0.80}, {fx:0.10,fy:0.15}, {fx:0.40,fy:0.80},
     {fx:0.60,fy:0.15}, {fx:0.90,fy:0.80},
   ],
-  3: [ // tight zigzag — 6 checkpoints
+  3: [ // tight zigzag — hard (L4)
     {fx:0.10,fy:0.85}, {fx:0.10,fy:0.15}, {fx:0.33,fy:0.15},
     {fx:0.33,fy:0.85}, {fx:0.56,fy:0.85}, {fx:0.78,fy:0.15},
     {fx:0.90,fy:0.15},
   ],
 };
+
+// Maps game level → path index (L1 and L2 share path 1)
+const LEVEL_PATH = { 1: 1, 2: 1, 3: 2, 4: 3 };
 
 // ─── TightropeScene ───────────────────────────────────────────────────────────
 // Scene key kept as 'MazeScene' to avoid rewiring display.js references.
@@ -55,7 +66,7 @@ class MarbleScene extends Phaser.Scene {
       onReady:           data.onReady            || (() => {}),
     };
     this._cfg        = LEVEL_CONFIG[data.level] || LEVEL_CONFIG[1];
-    this._pathDef    = PATHS[data.level]        || PATHS[1];
+    this._pathDef    = PATHS[LEVEL_PATH[data.level]] || PATHS[1];
     this._tilt              = {};
     this._state             = {};
     this._paused            = !!data.startPaused;
@@ -223,11 +234,14 @@ class MarbleScene extends Phaser.Scene {
       const p0 = this._players[0];
       const s0 = this._state[p0.playerNum];
       if (s0) {
+        const tilt = this._tilt[p0.playerNum] || { gamma: 0, beta: 0 };
         this._trajectory.push({
           t_ms,
           x_frac: +((s0.ball.x - this._AX) / this._AW).toFixed(4),
           y_frac: +((s0.ball.y - this._AY) / this._AH).toFixed(4),
           proximity_level: s0.proxLevel,
+          gamma: +tilt.gamma.toFixed(2),
+          beta: +tilt.beta.toFixed(2),
         });
       }
     }
@@ -307,13 +321,14 @@ class MarbleScene extends Phaser.Scene {
   }
 
   _proxLevel(gap, current) {
-    const [t1, t2, t3] = PROX_T;
-    const h = PROX_HYST;
+    const hw = this._cfg.halfWidth;
+    const t1 = PROX_T_PCT[0] * hw, t2 = PROX_T_PCT[1] * hw, t3 = PROX_T_PCT[2] * hw;
+    const h  = PROX_HYST_PCT * hw;
     // Ascending: immediate entry into higher danger levels
     if (gap < t3) return 3;
     if (gap < t2 && current < 2) return 2;
     if (gap < t1 && current < 1) return 1;
-    // Descending: hysteresis at each threshold prevents rapid toggling
+    // Descending: hysteresis prevents rapid toggling
     if (current === 3 && gap > t3 + h) return 2;
     if (current === 2 && gap > t2 + h) return 1;
     if (current === 1 && gap > t1 + h) return 0;
