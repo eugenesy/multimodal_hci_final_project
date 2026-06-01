@@ -69,17 +69,13 @@
 
 \begin{teaserfigure}
   \centering
-  \fbox{%
-    \parbox[c][7cm][c]{0.96\textwidth}{%
-      \centering
-      \large\textit{[Figure 1 placeholder --- game screenshot / system diagram]}}}
-  \caption{The \emph{PathSense} interface. Left: the tightrope balance
-    game displayed on the external monitor. Right: the participant's phone
-    showing proximity feedback and tilt controls. Proximity warning levels
-    (SAFE / NEAR / WARN / DANGER) escalate as the ball approaches the path
-    edge.}
-  \Description{Placeholder for a two-panel figure showing the game display
-    and the phone controller interface.}
+  \includegraphics[width=\linewidth]{figure.png}
+  \caption{The three between-subjects feedback conditions in PathSense.
+    All groups use the same tilt control; the only difference is the feedback modality.}
+  \Description{Three-column figure showing the PathSense study conditions:
+    Group A (no feedback), Group B (sound feedback), Group C (haptic feedback).
+    Each column shows an external monitor with the game display and a hand
+    holding the smartphone controller with a tilt-position indicator.}
   \label{fig:teaser}
 \end{teaserfigure}
 
@@ -156,7 +152,7 @@ comparable effects in a non-dominant hand tilt task remains untested.
 We present \emph{PathSense}, a smartphone tightrope tilt task in which
 participants navigate a ball along a narrow pre-designed path using only their
 non-dominant hand, receiving graded proximity warnings in one of three
-modalities (haptic / audio / none).
+modalities (haptic / audio / none) --- see Figure~\ref{fig:teaser}.
 Falls (ball-off-path events) are the primary outcome.
 We contribute:
 \begin{itemize}
@@ -171,6 +167,34 @@ We contribute:
         active single-handed phone use
 \end{itemize}
 
+We address the following research questions:
+
+\begin{table}[h]
+  \caption{Research Questions}
+  \label{tab:rqs}
+  \begin{tabular}{p{0.06\linewidth} p{0.86\linewidth}}
+    \toprule
+    \textbf{RQ} & \textbf{Question} \\
+    \midrule
+    RQ1\textsuperscript{*} &
+      Does continuous proximity-based feedback modality (haptic / audio / none)
+      affect fall rate in a tilt-controlled tightrope balance task performed
+      with the non-dominant hand? \\[4pt]
+    RQ2 &
+      Does \emph{any} proximity feedback reduce falls compared to the
+      no-feedback condition? \\[4pt]
+    RQ3 &
+      Which modality (haptic / audio) produces fewer falls? \\[4pt]
+    RQ4 &
+      Does performance improve across difficulty levels
+      (L1\,$\to$\,L2\,$\to$\,L3), and is that improvement
+      modality-dependent? \\
+    \bottomrule
+  \end{tabular}
+  \smallskip\par
+  \footnotesize\textsuperscript{*}Primary research question.
+\end{table}
+
 % =========================================================================
 % TODO: add remaining sections
 %   \section{Related Work}
@@ -178,7 +202,6 @@ We contribute:
 %   \section{Results}
 %   \section{Discussion}
 %   \section{Limitations and Future Work}
-%   Figure 1 (system diagram / game screenshot)
 % =========================================================================
 
 % -------------------------------------------------------------------------

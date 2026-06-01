@@ -51,8 +51,11 @@ function _chipVal(containerId) {
 
 // ─── Device parser ────────────────────────────────────────────────────────────
 function _parseDevice(ua) {
-  const android = ua.match(/Android\s([\d.]+);\s([^)]+?)\sBuild/);
-  if (android) return { os_version: android[1], device_model: android[2].trim() };
+  // Android: try full "Android X.X; MODEL Build" first, fall back to version-only
+  const androidFull = ua.match(/Android\s([\d.]+);\s([^)]+?)\sBuild/);
+  if (androidFull) return { os_version: androidFull[1], device_model: androidFull[2].trim() };
+  const androidVer = ua.match(/Android\s([\d.]+)/);
+  if (androidVer) return { os_version: androidVer[1], device_model: 'Android' };
   const ios = ua.match(/CPU (?:iPhone )?OS ([\d_]+)/);
   if (ios) return { os_version: ios[1].replace(/_/g, '.'), device_model: 'iPhone' };
   return { os_version: '', device_model: '' };
@@ -60,12 +63,6 @@ function _parseDevice(ua) {
 
 // ─── Join ─────────────────────────────────────────────────────────────────────
 function connectWithName() {
-  const name = (document.getElementById('join-name')?.value || '').trim();
-  if (!name) {
-    _showError('Please enter your name.');
-    return;
-  }
-
   _demographics = {
     handedness:        _chipVal('chips-hand'),
     gaming_experience: _chipVal('chips-gaming'),
@@ -81,7 +78,6 @@ function connectWithName() {
   socket = io({
     query: {
       role:              'controller',
-      playerName:        name,
       playerId,
       canVibrate:        String(canVibrate),
       os:                navigator.platform || '',
@@ -124,10 +120,14 @@ function _bindSocketEvents() {
     socket.disconnect();
   });
 
-  socket.on('PLAYER_ASSIGNED', ({ playerNum, color, modality, playCount } = {}) => {
+  socket.on('PLAYER_ASSIGNED', ({ playerNum, color, modality, playCount, playerName } = {}) => {
     _playerNum = playerNum;
     _modality  = modality;
     _playCount = playCount || 0;
+
+    // Show assigned participant ID on the join screen (visible briefly before transition)
+    const pidEl = document.getElementById('join-participant-id');
+    if (pidEl && playerName) pidEl.textContent = `ID: ${playerName}`;
 
     const sessionTag = `P${playerNum} · ${modality.toUpperCase()}`;
     const badgeText  = modality.toUpperCase();
@@ -150,13 +150,16 @@ function _bindSocketEvents() {
   });
 
   socket.on('GAME_START', ({ level } = {}) => {
-    const lvl = Math.min(3, Math.max(1, Number(level) || 1));
-    const names = ['LEVEL<br>ONE', 'LEVEL<br>TWO', 'LEVEL<br>THREE'];
+    stopAllFeedback();
+    const lvl = Math.min(4, Math.max(1, Number(level) || 1));
+    const names = ['PRACTICE<br>ROUND', 'LEVEL<br>ONE', 'LEVEL<br>TWO', 'LEVEL<br>THREE'];
     const ph = document.getElementById('playing-headline');
     if (ph) ph.innerHTML = names[lvl - 1];
     _setState('calibration');
     _startAutoCalib();
   });
+
+  socket.on('FORCE_RELOAD', () => window.location.reload());
 
   socket.on('GAME_END', () => {
     _gyroPhase = 'idle';
@@ -164,17 +167,9 @@ function _bindSocketEvents() {
     _setState('survey');
   });
 
-  // Proximity feedback
-  socket.on('HAPTIC_PROXIMITY', ({ level } = {}) => {
-    if (!navigator.vibrate) return;
-    const patterns = { 0: [], 1: [30], 2: [30, 80, 30], 3: [40, 50, 40, 50, 40] };
-    const p = patterns[level] || [];
-    if (p.length) navigator.vibrate(p);
-  });
-
-  socket.on('AUDIO_PROXIMITY', ({ level } = {}) => {
-    _playTone(level);
-  });
+  // Proximity feedback — repeats within each level; rate increases with danger
+  socket.on('HAPTIC_PROXIMITY', ({ level } = {}) => _setHapticLevel(level));
+  socket.on('AUDIO_PROXIMITY',  ({ level } = {}) => _setAudioLevel(level));
 
   socket.on('PING', () => socket.emit('PONG', {}));
 }
@@ -238,12 +233,27 @@ function _fallbackGyro() {
   window.addEventListener('deviceorientation', e => _onRawGyro(e.gamma ?? 0, e.beta ?? 0));
 }
 
+const _tiltBall = document.getElementById('tilt-ball');
+const _TILT_R   = 40; // max px offset inside ring (ring radius = 65, ball radius = 11)
+
+function _updateTiltIndicator(g, b) {
+  if (!_tiltBall) return;
+  const MAX_DEG = 28;
+  let nx = g / MAX_DEG, ny = b / MAX_DEG;
+  const len = Math.hypot(nx, ny);
+  if (len > 1) { nx /= len; ny /= len; }
+  // Ring is 130px, radius 65px. Ball stays within _TILT_R px from center.
+  _tiltBall.style.left = (50 + nx * (_TILT_R / 65) * 50) + '%';
+  _tiltBall.style.top  = (50 + ny * (_TILT_R / 65) * 50) + '%';
+}
+
 function _onRawGyro(raw_g, raw_b) {
   if (_gyroPhase === 'calibrating') {
     _calibSamples.push({ g: raw_g, b: raw_b });
   } else if (_gyroPhase === 'sending') {
     currentGamma = raw_g - calibGamma;
     currentBeta  = raw_b - calibBeta;
+    _updateTiltIndicator(currentGamma, currentBeta);
     const now = Date.now();
     if (now - _lastSent < 16) return;
     _lastSent = now;
@@ -276,33 +286,83 @@ document.addEventListener('dblclick', () => {
 // ─── Audio tones ──────────────────────────────────────────────────────────────
 let _audioCtx = null;
 
-// iOS/Android require a user gesture before AudioContext can produce sound.
-// Create and resume it on the first touch so tones play reliably later.
-document.addEventListener('touchstart', function _unlockAudio() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
-  document.removeEventListener('touchstart', _unlockAudio);
-}, { passive: true });
+// iOS/Android gate AudioContext on a user gesture. The join button is the
+// earliest definitive gesture — play a silent 1-sample buffer there to unlock
+// the context permanently. The touchstart listener below is a belt-and-suspenders
+// fallback for devices that need a later touch.
+function _unlockAudioCtx() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const buf = _audioCtx.createBuffer(1, 1, 22050);
+    const src = _audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(_audioCtx.destination);
+    src.start(0);
+  } catch (_) {}
+}
+
+document.addEventListener('touchstart', function _touchUnlock() {
+  _unlockAudioCtx();
+  document.removeEventListener('touchstart', _touchUnlock);
+}, { passive: true, once: true });
 
 function _playTone(level) {
   if (level === 0) return;
   try {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
-    const freqs = { 1: 330, 2: 440, 3: 660 };
-    const durs  = { 1: 0.08, 2: 0.12, 3: 0.18 };
-    const osc = _audioCtx.createOscillator();
+    if (_audioCtx.state !== 'running') _audioCtx.resume();
+    const freq = AUDIO_FREQS[level] || 440;
+    const dur  = AUDIO_DURS[level]  || 0.1;
+    const osc  = _audioCtx.createOscillator();
     const gain = _audioCtx.createGain();
     osc.connect(gain); gain.connect(_audioCtx.destination);
-    osc.frequency.value = freqs[level] || 440;
-    gain.gain.setValueAtTime(0.25, _audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + (durs[level] || 0.1));
-    osc.start(); osc.stop(_audioCtx.currentTime + (durs[level] || 0.1));
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.75, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur);
+    osc.start(); osc.stop(_audioCtx.currentTime + dur);
   } catch (_) {}
+}
+
+// ─── Repeating proximity feedback ────────────────────────────────────────────
+// Feedback fires immediately on level entry, then repeats at a level-specific
+// Haptic: each vibration starts before the previous one ends → feels continuous.
+// Audio:  short tone repeated at a rate shorter than silence between levels.
+// Both are driven by a polling interval independent of level-change events.
+let _hapticInterval = null;
+let _audioInterval  = null;
+
+// Vibration duration per level (ms). Re-issued every HAPTIC_RATE ms.
+// dur > rate at L3 means overlapping calls → continuous buzz feel.
+const HAPTIC_DUR  = { 1: 100, 2: 150, 3: 250, 4: 500 };
+const HAPTIC_RATE = { 1: 400, 2: 200, 3: 80 };  // ms between re-issues
+
+// Audio: short tones at increasing rate. L3 gap = RATE − DUR*1000 ≈ 20ms.
+const AUDIO_FREQS = { 1: 440, 2: 700, 3: 1200, 4: 880 };
+const AUDIO_DURS  = { 1: 0.09, 2: 0.08, 3: 0.06, 4: 0.25 };
+const AUDIO_RATE  = { 1: 550, 2: 230, 3: 80 };  // ms between tones
+
+function _setHapticLevel(level) {
+  if (_hapticInterval) { clearInterval(_hapticInterval); _hapticInterval = null; }
+  if (!navigator.vibrate) return;
+  if (level === 0) { navigator.vibrate(0); return; }
+  const dur = HAPTIC_DUR[level] ?? 100;
+  const go  = () => navigator.vibrate([dur]);
+  go();
+  if (level !== 4) _hapticInterval = setInterval(go, HAPTIC_RATE[level] ?? 200);
+}
+
+function _setAudioLevel(level) {
+  if (_audioInterval) { clearInterval(_audioInterval); _audioInterval = null; }
+  if (level === 0) return;
+  _playTone(level);
+  if (level !== 4) _audioInterval = setInterval(() => _playTone(level), AUDIO_RATE[level] ?? 200);
 }
 
 // ─── Feedback stop ────────────────────────────────────────────────────────────
 function stopAllFeedback() {
+  if (_hapticInterval) { clearInterval(_hapticInterval); _hapticInterval = null; }
+  if (_audioInterval)  { clearInterval(_audioInterval);  _audioInterval  = null; }
   if (navigator.vibrate) navigator.vibrate(0);
 }
 
@@ -343,9 +403,9 @@ function _showError(msg) {
 }
 
 // ─── Join button ──────────────────────────────────────────────────────────────
-document.getElementById('join-btn')?.addEventListener('click', connectWithName);
-document.getElementById('join-name')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') connectWithName();
+document.getElementById('join-btn')?.addEventListener('click', () => {
+  _unlockAudioCtx();  // unlock audio on the earliest user gesture
+  connectWithName();
 });
 
 // ─── Chip init ────────────────────────────────────────────────────────────────

@@ -20,7 +20,10 @@
       "Bash(tectonic --keep-intermediates paper.tex)",
       "Read(//Users/syeugene/Library/Caches/Tectonic/**)",
       "Read(//Users/syeugene/.cache/**)",
-      "Bash(tectonic --keep-intermediates --keep-logs paper.tex)"
+      "Bash(tectonic --keep-intermediates --keep-logs paper.tex)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(pdflatex -interaction=nonstopmode paper.tex)"
     ]
   }
 }

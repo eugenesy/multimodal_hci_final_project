@@ -9,9 +9,10 @@ const STATE = {
 };
 
 const LEVEL_META = {
-  1: { label: 'LEVEL 1', desc: 'Gentle S-curve · 90 s', name: 'LEVEL<br>ONE' },
-  2: { label: 'LEVEL 2', desc: 'N-shape · 75 s',        name: 'LEVEL<br>TWO' },
-  3: { label: 'LEVEL 3', desc: 'Tight zigzag · 60 s',   name: 'LEVEL<br>THREE' },
+  1: { label: 'PRACTICE', desc: 'S-curve · 90 s',        name: 'PRACTICE<br>ROUND' },
+  2: { label: 'LEVEL 1',  desc: 'Gentle S-curve · 90 s', name: 'LEVEL<br>ONE' },
+  3: { label: 'LEVEL 2',  desc: 'N-shape · 75 s',        name: 'LEVEL<br>TWO' },
+  4: { label: 'LEVEL 3',  desc: 'Tight zigzag · 60 s',   name: 'LEVEL<br>THREE' },
 };
 
 let currentState = STATE.WAITING;
@@ -29,8 +30,9 @@ let rrTimer         = null;
 // ─── Socket ───────────────────────────────────────────────────────────────────
 const socket = io({ query: { role: 'pc' } });
 
-socket.on('connect',    () => console.log('[Display] Connected:', socket.id));
-socket.on('disconnect', () => console.log('[Display] Disconnected'));
+socket.on('connect',      () => console.log('[Display] Connected:', socket.id));
+socket.on('disconnect',   () => console.log('[Display] Disconnected'));
+socket.on('FORCE_RELOAD', () => window.location.reload());
 
 socket.on('SESSION_RESTORE', ({ players: list }) => {
   if (list?.length) { players = list; _renderWaiting(); }
@@ -56,8 +58,13 @@ socket.on('GYRO_DATA', ({ gamma, beta, player }) => {
 
 socket.on('GAME_START', ({ level, sessionId: sid } = {}) => {
   if (sid) sessionId = sid;
+  _startLevel(Math.min(4, Math.max(1, Number(level) || 1)));
+});
+
+function _startLevel(lvl) {
+  clearInterval(rrTimer);
   currentRound++;
-  currentLevel = Math.min(3, Math.max(1, Number(level) || 1));
+  currentLevel = lvl;
   _destroyPhaser();
 
   // Update level banner
@@ -74,11 +81,9 @@ socket.on('GAME_START', ({ level, sessionId: sid } = {}) => {
   if (statusTag)  statusTag.textContent  = p ? `${p.playerName} · ${(p.modality || '').toUpperCase()}` : '';
   if (phaseBadge) { phaseBadge.textContent = 'GAME'; phaseBadge.style.background = 'var(--red)'; phaseBadge.style.color = '#fff'; }
 
-  // Show game view NOW so phaser-wrap has real layout dimensions
   _transitionTo(STATE.ROUND_ACTIVE);
   _showCalibOverlay(true);
 
-  // Build Phaser after one animation frame so the browser computes layout
   const playerList = players.map(pl => ({ playerNum: pl.playerNum, color: pl.color, name: pl.playerName }));
   requestAnimationFrame(() => {
     phaserGame = window.createPhaserGame('phaser-wrap', {
@@ -91,7 +96,7 @@ socket.on('GAME_START', ({ level, sessionId: sid } = {}) => {
       onReady:           (scene) => { activeMazeScene = scene; },
     });
   });
-});
+}
 
 socket.on('CALIBRATION_DONE', () => {
   _showCalibOverlay(false);
@@ -164,7 +169,12 @@ function _onProximityChange(playerNum, level) {
 }
 
 function _onGameEnd({ rankings, round_duration_ms, trajectory }) {
-  socket.emit('GAME_END');
+  // GAME_END triggers the survey on the controller — only send after the final level
+  if (currentLevel >= 4) {
+    socket.emit('GAME_END');
+  } else {
+    socket.emit('ROUND_END');  // resets server phase to LOBBY without triggering survey
+  }
   socket.emit('ROUND_COMPLETE', { rankings });
 
   const result = { round: currentRound, level: currentLevel, round_duration_ms, trajectory, rankings, playerSnapshot: [...players] };
@@ -215,8 +225,8 @@ function _renderRoundResults({ level, round_duration_ms, rankings, playerSnapsho
 
   const nextTxt = document.getElementById('res-next-txt');
   const cd      = document.getElementById('res-countdown');
-  if (level < 3) {
-    if (nextTxt) nextTxt.textContent = 'Next round in';
+  if (level < 4) {
+    if (nextTxt) nextTxt.textContent = level === 1 ? 'Starting Level 1 in' : 'Next level in';
   } else {
     if (nextTxt) nextTxt.textContent = 'Session complete in';
   }
@@ -229,7 +239,7 @@ function _renderRoundResults({ level, round_duration_ms, rankings, playerSnapsho
     if (cd) cd.textContent = secs > 0 ? secs : '';
     if (secs <= 0) {
       clearInterval(rrTimer);
-      if (level < 3) {
+      if (level < 4) {
         socket.emit('AUTO_NEXT_LEVEL', { level: level + 1 });
       } else {
         _backToWaiting();

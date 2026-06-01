@@ -118,18 +118,10 @@ class MarbleScene extends Phaser.Scene {
       g.beginPath(); g.moveTo(ax+nx, ay+ny); g.lineTo(bx+nx, by+ny); g.strokePath();
       g.beginPath(); g.moveTo(ax-nx, ay-ny); g.lineTo(bx-nx, by-ny); g.strokePath();
     }
-    // 4. Bevel joints at internal junctions — connect edge lines across corners
+    // 4. Stroke circles at internal junctions — matches dark fill circles, no triangle artifacts
+    g.lineStyle(3, 0xc0392b, 1.0);
     for (let i = 1; i < pts.length - 1; i++) {
-      const ax = pts[i-1].x, ay = pts[i-1].y;
-      const bx = pts[i].x,   by = pts[i].y;
-      const cx = pts[i+1].x, cy = pts[i+1].y;
-      const l1 = Math.hypot(bx-ax, by-ay), l2 = Math.hypot(cx-bx, cy-by);
-      if (l1 === 0 || l2 === 0) continue;
-      const n1x = -(by-ay)/l1 * hw, n1y = (bx-ax)/l1 * hw;
-      const n2x = -(cy-by)/l2 * hw, n2y = (cx-bx)/l2 * hw;
-      g.lineStyle(3, 0xc0392b, 1.0);
-      g.beginPath(); g.moveTo(bx+n1x, by+n1y); g.lineTo(bx+n2x, by+n2y); g.strokePath();
-      g.beginPath(); g.moveTo(bx-n1x, by-n1y); g.lineTo(bx-n2x, by-n2y); g.strokePath();
+      g.strokeCircle(pts[i].x, pts[i].y, hw);
     }
 
     // Center guide line (subtle)
@@ -190,11 +182,10 @@ class MarbleScene extends Phaser.Scene {
       this._state[p.playerNum] = {
         ball,
         vx: 0, vy: 0,
-        falls:         0,
-        checkpointIdx: 0,
-        stunUntil:     0,
-        proxLevel:     0,
-        proxMs:        { 1: 0, 2: 0, 3: 0 },
+        falls:     0,
+        stunUntil: 0,
+        proxLevel: 0,
+        proxMs:    { 1: 0, 2: 0, 3: 0 },
       };
     });
 
@@ -267,9 +258,8 @@ class MarbleScene extends Phaser.Scene {
       if (dist > hw && !stunned) {
         s.falls++;
         this._cbs.onWallHit(p.playerNum);
-        const cp  = pts[s.checkpointIdx];
-        s.ball.x  = cp.x;
-        s.ball.y  = cp.y;
+        s.ball.x = pts[0].x;
+        s.ball.y = pts[0].y;
         s.vx = 0; s.vy = 0;
         s.stunUntil = time + STUN_MS;
         this.tweens.add({
@@ -278,18 +268,11 @@ class MarbleScene extends Phaser.Scene {
         });
       }
 
-      // ── Checkpoint advancement (only when not stunned) ──────────────────────
+      // ── End detection — check distance to END point every frame ────────────
       if (!stunned) {
-        const nextIdx = s.checkpointIdx + 1;
-        if (nextIdx < pts.length) {
-          const np = pts[nextIdx];
-          // Use larger detection zone for the finish line
-          const isEnd = nextIdx === pts.length - 1;
-          const radius = isEnd ? hw + 15 : 50;
-          if (Math.hypot(s.ball.x - np.x, s.ball.y - np.y) < radius) {
-            s.checkpointIdx = nextIdx;
-            if (isEnd) { this._endGame(); return; }
-          }
+        const endPt = pts[pts.length - 1];
+        if (Math.hypot(s.ball.x - endPt.x, s.ball.y - endPt.y) < hw + 15) {
+          this._endGame(); return;
         }
       }
 
@@ -348,9 +331,7 @@ class MarbleScene extends Phaser.Scene {
       return {
         playerNum:           p.playerNum,
         falls:               s.falls,
-        checkpoints:         s.checkpointIdx,
-        totalCheckpoints:    this._pathPts.length - 1,
-        score:               s.checkpointIdx * 100 - s.falls * 25,
+        score:               Math.max(0, 1000 - s.falls * 100),
         time_at_level_1_ms:  s.proxMs[1],
         time_at_level_2_ms:  s.proxMs[2],
         time_at_level_3_ms:  s.proxMs[3],
@@ -368,11 +349,7 @@ class MarbleScene extends Phaser.Scene {
     const out = {};
     for (const p of this._players) {
       const s = this._state[p.playerNum];
-      if (s) out[p.playerNum] = {
-        score:       s.checkpointIdx * 100 - s.falls * 25,
-        falls:       s.falls,
-        checkpoints: s.checkpointIdx,
-      };
+      if (s) out[p.playerNum] = { falls: s.falls, score: Math.max(0, 1000 - s.falls * 100) };
     }
     return out;
   }
