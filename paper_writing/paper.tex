@@ -85,10 +85,18 @@ We discuss implications for modality design in motor augmentation and provide ef
 \section{Introduction}
 % =========================================================================
 
-Tilt-based interfaces require real precision from the non-dominant hand, the limb we typically rely on less, yet one that already leans heavily on peripheral proprioceptive feedback rather than fine cortical resolution~\cite{position_adamo_2009}.
-When we actively use a tool, the brain extends its spatial self-model to encompass it~\cite{tools_maravita_2004}; if the held phone is already encoded as a bodily extension, proximity warnings delivered \emph{through} it may update the user's spatial model more directly than warnings on a separate channel.
-Whether feedback \emph{modality} shapes that benefit is less clear: haptic cues act on the same sensorimotor channel as the task, while audio cues are processed on a separate channel and require deliberate signal-to-correction mapping~\cite{augmented_sigrist_2013}.
-Existing evidence comes from lab-grade rehabilitation rigs~\cite{robotassisted_cuppone_2016}; whether smartphone-delivered proximity feedback produces comparable effects in a non-dominant hand tilt task remains untested.
+Consider three everyday situations where one hand is occupied and the other must compensate alone: an elderly person pulling a shopping trolley while trying to navigate a smartphone with their free hand; a surgeon piloting a robotic arm through delicate tissue where a single mistilt causes harm; a drone operator managing two control axes simultaneously under time pressure.
+In each case the same problem appears: one hand is busy, and the other hand is effectively blind.
+The off-hand receives no feedback about where it is or what it is doing, and without that feedback, the brain cannot adapt.
+
+This difficulty has a neurological basis.
+Guiard (1987) described the non-dominant limb as the \emph{frame-setter} in bimanual action, responsible for coarse spatial positioning rather than fine movement~\cite{asymmetric_guiard_1987}, and subsequent work has confirmed that the non-dominant hand relies more heavily on peripheral proprioceptive feedback than its dominant counterpart~\cite{position_adamo_2009}.
+Crucially, the brain extends its spatial self-model into actively held tools~\cite{tools_maravita_2004}, and recent evidence suggests smartphones specifically engage this body schema mechanism~\cite{smartphone_lin_2022}.
+If the held phone is already encoded as a bodily extension, proximity warnings delivered \emph{through} it may update the user's spatial model more directly than warnings arriving on a separate channel.
+
+The open question is which feedback channel works best.
+Haptic cues act on the same sensorimotor channel as the task itself, while audio cues are processed separately and require deliberate signal-to-correction mapping~\cite{augmented_sigrist_2013}.
+Vibrotactile feedback has shown promise in proprioceptive rehabilitation~\cite{robotassisted_cuppone_2016}, but whether smartphone-delivered proximity feedback produces comparable effects in a non-dominant hand tilt task has not been tested.
 
 We present \emph{PathSense}, a smartphone tightrope tilt task in which participants navigate a ball along a narrow pre-designed path using only their non-dominant hand, receiving graded proximity warnings in one of three modalities (haptic, audio, or none), shown in Figure~\ref{fig:teaser}.
 Falls (ball-off-path events) are the primary outcome.
