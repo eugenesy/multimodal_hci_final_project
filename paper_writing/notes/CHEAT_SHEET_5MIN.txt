@@ -1,0 +1,131 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    PATHSENSE PRESENTATION — 5-MINUTE CHEAT SHEET
+                      7 Slides @ ~40 seconds each | June 2, 2026
+═══════════════════════════════════════════════════════════════════════════════
+
+STORY ARC (MEMORIZE THIS):
+  1. Problem: Off-hand tilt feels awkward (why?)
+  2. Question: Which feedback helps? (haptic vs audio vs none)
+  3. Design: PathSense — tightrope game, 25 people, 4 levels
+  4. Data: All groups follow same learning curve (no winner)
+  5. DISCOVERY: Baseline wasn't equal! (4.88 vs 0.33 = 10×)
+  6. Impact: Who benefits (3 groups) + Why it matters
+  7. Close: Next steps + Reframe null result as blueprint
+
+───────────────────────────────────────────────────────────────────────────────
+TIMING (Total: 4:40–5:00):
+───────────────────────────────────────────────────────────────────────────────
+
+Slide 1  (0:00-0:10)  Title — Hook
+Slide 2  (0:10-1:00)  Problem — Body schema explanation
+Slide 3  (1:00-1:50)  PathSense — Design + question
+Slide 4  (1:50-2:35)  Learning Curve — Data visualization
+Slide 5  (2:35-3:35)  Discovery — BASELINE TABLE (4.88 vs 0.33, 10×)
+Slide 6  (3:35-4:35)  Who Benefits — 3 personas + why it matters
+Slide 7  (4:35-5:15)  Close — Next steps + "Null results aren't failures"
+
+───────────────────────────────────────────────────────────────────────────────
+CRITICAL NUMBERS (SAY THESE WITH CONFIDENCE):
+───────────────────────────────────────────────────────────────────────────────
+
+✓ 4.88 falls (Haptic baseline)
+✓ 0.33 falls (Audio baseline)
+✓ 10× DIFFERENCE (This is the key number!)
+✓ 25 participants
+✓ 3 modalities
+✓ 4 difficulty levels
+
+───────────────────────────────────────────────────────────────────────────────
+TRANSITIONS (SAY EXACTLY):
+───────────────────────────────────────────────────────────────────────────────
+
+S1→S2: "Let me start with the problem..."
+S2→S3: "Which brings us to our question..."
+S3→S4: "Let me show you what actually happened..."
+S4→S5: "But stick with me—because something really interesting was happening..."
+S5→S6: "Now, this might sound like bad news. It's not. Here's why..."
+S6→S7: "This isn't theoretical. This is about real people."
+
+───────────────────────────────────────────────────────────────────────────────
+CRITICAL PAUSE POINTS (Don't rush these!):
+───────────────────────────────────────────────────────────────────────────────
+
+Slide 5 — After saying "10-fold difference" → PAUSE 3 seconds
+Slide 5 — After saying "This was methodology" → PAUSE 2 seconds
+Slide 7 — After saying "Thank you" → PAUSE 3 seconds before sitting down
+
+───────────────────────────────────────────────────────────────────────────────
+SLIDE CONTENT SNAPSHOT:
+───────────────────────────────────────────────────────────────────────────────
+
+S1: Title only — "One Gesture. One Question. One Discovery."
+
+S2: Problem + Body Schema
+    - Image placeholder (off-hand phone tilt awkward)
+    - "Tilting a phone feels off"
+    - "Non-dominant hand doesn't know where edge is"
+
+S3: PathSense Design
+    - Game image placeholder
+    - "Balance ball on tightrope, non-dominant hand only"
+    - 3 conditions: Haptic • Audio • Nothing
+    - "25 people. Which helps most?"
+
+S4: Learning Curve (your actual fig_learning_curve.pdf embedded)
+    - "All groups: practice → easy (learn) → hard (crash)"
+    - "No clear winner"
+
+S5: THE DISCOVERY (Baseline Table)
+    - "But before any feedback was given..."
+    - Table: Haptic 4.88 | Audio 0.33 | Difference 10×
+    - "This wasn't randomness. This was methodology."
+
+S6: Who Benefits
+    - "Why it matters. Who it helps."
+    - 3 keywords: Gamers with motor challenges
+    - Older adults learning new tech
+    - One-handed users
+    - "PathSense: testbed for off-hand accessibility"
+
+S7: Close
+    - "Scale up (n=50) • Test adults • Real haptics"
+    - Big text: "Null results aren't failures."
+    - "They're blueprints for better questions."
+
+───────────────────────────────────────────────────────────────────────────────
+TONE CHECKLIST:
+───────────────────────────────────────────────────────────────────────────────
+
+Energy:    Low (S1) → High (S5) → Settled (S6) → Reflective (S7)
+Pace:      Conversational (talk to friends, not lecturing)
+Gestures:  Point, trace (don't hide behind podium)
+Eyes:      Scan room, don't stare at one person, professor during S6
+
+───────────────────────────────────────────────────────────────────────────────
+BEFORE YOU START:
+───────────────────────────────────────────────────────────────────────────────
+
+☐ presentation.pdf open in FULLSCREEN
+☐ This cheat sheet printed (for reference only)
+☐ Backup USB with PDF ready
+☐ Memorize: 4.88, 0.33, 10×, all 6 transitions
+☐ Know pause points: especially Slide 5 & 7
+☐ Take three deep breaths
+☐ Remember: You know this story better than anyone
+☐ Speak to PEOPLE, not slides
+
+───────────────────────────────────────────────────────────────────────────────
+DELIVERY QUICK TIPS:
+───────────────────────────────────────────────────────────────────────────────
+
+✓ PAUSE = Power (especially after "10-fold difference")
+✓ Point to the graph (Slide 4) as you trace it
+✓ Point to the table (Slide 5) as you read the numbers
+✓ Use vivid language: "writing in the dark", "they all crash at Hard"
+✓ Don't apologize for null result — own it as discovery
+✓ Make eye contact with professor during Slide 6 (who benefits)
+
+═══════════════════════════════════════════════════════════════════════════════
+                              YOU'VE GOT THIS. 🚀
+               5 minutes. 7 slides. Every second counts. Pauses count most.
+═══════════════════════════════════════════════════════════════════════════════

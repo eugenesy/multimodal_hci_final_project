@@ -1,0 +1,168 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    PATHSENSE PRESENTATION — QUICK REFERENCE
+                           10 Slides | 5 Minutes | June 2, 2026
+═══════════════════════════════════════════════════════════════════════════════
+
+THE STORY ARC (Memorize this—it's your backbone)
+─────────────────────────────────────────────────────────────────────────────
+
+1. PROBLEM: Off-hand control feels blind (elderly, surgeons, drone pilots)
+2. INSIGHT: Your brain extends into tools. Needs feedback to learn.
+3. QUESTION: Does haptic, audio, or nothing work best?
+4. DESIGN: Game + 25 people + 3 feedback types + 4 difficulty levels
+5. DATA: No modality difference. Everyone follows same pattern.
+6. PLOT TWIST: Baseline was 10× different BEFORE any feedback!
+7. LESSON: Task difficulty dominates. Modality doesn't predict outcomes.
+8. REAL INSIGHT: Individual baseline matters more than which technology.
+9. IMPLICATION: Don't pick tech and hope. Measure baseline FIRST.
+10. CLOSE: This study said "No" to modality. But "Yes" to individual differences.
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL NUMBERS (Say these with confidence)
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ 4.88 falls (Haptic baseline) — the struggling group
+✓ 0.33 falls (Audio baseline) — the naturally good group
+✓ 10× gap — this is the KEY FINDING
+✓ 25 people, 3 modalities, 4 levels — clean experimental design
+✓ No modality effect (p > 0.19) — null result is surprising but important
+✓ Task difficulty dominates — the real limiter
+
+═══════════════════════════════════════════════════════════════════════════════
+WHAT EACH SLIDE MEANS (In plain English)
+═══════════════════════════════════════════════════════════════════════════════
+
+SLIDE 1: Title
+  → Hook them: "Off-hand control feels awkward. Why?"
+
+SLIDE 2: The Problem (3 Real Photos)
+  → Make it REAL: elderly, surgeons, rescue pilots
+  → Not theoretical—these people are struggling RIGHT NOW
+
+SLIDE 3: Why Feedback Matters
+  → Brain science: you extend into your tools
+  → Feedback = how brain learns
+  → Three channels, different effects
+
+SLIDE 4: Research Questions
+  → We asked "which modality?"
+  → But discovered we should ask "who responds to what?"
+  → THIS IS THE PIVOT
+
+SLIDE 5: Study Design
+  → Show them: real experiment, real people, real data collection
+  → Cohort is diverse (ages 13-47, balanced)
+  → Makes it generalizable
+
+SLIDE 6: Falls & Control Accuracy
+  → Show both metrics—same story
+  → No difference across modalities
+  → "Wait... nothing worked?"
+
+SLIDE 7: BASELINE CONFOUND (The Discovery)
+  → This is the WOW moment
+  → 4.88 vs 0.33 = 10×
+  → "Groups weren't equal from the start"
+  → This explains why modality didn't matter
+
+SLIDE 8: Learning Curve & Steering Response
+  → All groups improve then crash
+  → Difficulty is the limiter, not feedback
+  → Data confirms: modality doesn't predict learning
+
+SLIDE 9: IMPLICATIONS (The Reframe)
+  → DON'T: "Add feedback and hope"
+  → DO: "Measure baseline, THEN design feedback"
+  → For elderly, surgeons, drone pilots—same principle
+  → Individual responsiveness > technology choice
+
+SLIDE 10: Conclusion
+  → Own the story: "We said No to modality. We said Yes to individuals."
+  → This study's null result is actually a breakthrough
+
+═══════════════════════════════════════════════════════════════════════════════
+TONE & PACING GUIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+SLIDES 1-2:    Build the PROBLEM (make it matter)
+SLIDES 3-5:    Present the HYPOTHESIS (here's what we tested)
+SLIDES 6-7:    Show the SURPRISE (results are unexpected)
+SLIDE 8:       Connect the DOTS (here's what the data means)
+SLIDE 9:       The INSIGHT (here's what it means for real people)
+SLIDE 10:      The CLOSE (here's why it matters)
+
+Energy Arc:
+  0:00-1:00   → Build curiosity (problem, theory, question)
+  1:00-3:00   → Show data (results, plot twist, learning)
+  3:00-4:30   → Make it matter (implications, real-world applications)
+  4:30-5:00   → Settle & land (close with confidence)
+
+═══════════════════════════════════════════════════════════════════════════════
+PAUSE POINTS (Silence is powerful—use it)
+═══════════════════════════════════════════════════════════════════════════════
+
+After Slide 2 ending:        "One hand is busy. One hand is blind."     [2 sec pause]
+After Slide 7 numbers:       "That's a 10-fold difference."              [3 sec pause]
+After Slide 9 insight:       "Baseline matters more than tech."          [2 sec pause]
+After Slide 10 closing:      Let silence sit after "Thank you."          [3 sec pause]
+
+═══════════════════════════════════════════════════════════════════════════════
+TRANSITIONS (Exact phrases—memorize these)
+═══════════════════════════════════════════════════════════════════════════════
+
+→ "Let me show you where this problem actually matters..."
+→ "So the question is: what if the phone could tell your hand?"
+→ "To answer that, we ran a study..."
+→ "Here's what happened..."
+→ "Which brings me to what we discovered..."
+→ "So what does that mean for learning?"
+→ "Now we have to ask: what does this mean for real people?"
+→ "And that's the whole study in a nutshell..."
+→ "Thank you." [pause] [sit down]
+
+═══════════════════════════════════════════════════════════════════════════════
+BEFORE YOU START
+═══════════════════════════════════════════════════════════════════════════════
+
+☐ presentation.pdf open in FULLSCREEN
+☐ Know the 3 real-world examples (elderly, surgeon, drone pilot) intimately
+☐ Memorize: 4.88, 0.33, 10× — say these numbers with confidence
+☐ Understand the PIVOT at Slide 4 (modality → individual responsiveness)
+☐ Know why Slide 7 is the key moment (baseline confound discovery)
+☐ Own the null result as a discovery, not a failure
+☐ Practice pausing (silence lets ideas land)
+☐ Take three deep breaths before starting
+
+═══════════════════════════════════════════════════════════════════════════════
+DELIVERY ATTITUDE
+═══════════════════════════════════════════════════════════════════════════════
+
+You're not lecturing. You're telling a story about PEOPLE.
+
+Be:
+  ✓ Curious ("Here's what happened...")
+  ✓ Honest ("This was surprising...")
+  ✓ Relatable ("Your grandmother struggles with this...")
+  ✓ Confident ("The data shows...")
+  ✓ Humble ("We learned that individual differences matter...")
+
+Don't be:
+  ✗ Defensive about null result
+  ✗ Technical or jargony
+  ✗ In a hurry
+  ✗ Reading slides
+  ✗ Apologizing
+
+═══════════════════════════════════════════════════════════════════════════════
+IF YOU GET NERVOUS
+═══════════════════════════════════════════════════════════════════════════════
+
+Remember:
+  → You know this story better than anyone in that room
+  → The null result is actually interesting (baseline matters!)
+  → These are REAL people (elderly, surgeons, pilots) — they matter
+  → Your recommendation (measure baseline first) is actionable
+
+You've got this. 🚀
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,278 @@
+% ========== PARTICIPANT DEMOGRAPHICS ==========
+
+\begin{table}[h]
+  \centering
+  \caption{Participant demographics by modality (n=8 per group). Device: Android Realme C3.}
+  \label{tab:demographics}
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Measure} & \textbf{Haptic} & \textbf{Audio} & \textbf{None} \\
+    \midrule
+    Age (years) & \textit{M} (\textit{SD}) \\
+    Haptic & 18.5 (8.6) & & \\
+    Audio & 19.4 (11.0) & & \\
+    None & 14.2 (0.9) & & \\
+    \midrule
+    Male & 6/8 & 4/9 & 1/8 \\
+    Right-handed & 8/8 & 9/9 & 6/8 \\
+    Regular gamer & 2/8 & 0/9 & 1/8 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ========== DESCRIPTIVE STATISTICS ==========
+
+\begin{table}[h]
+  \centering
+  \caption{Descriptive statistics: Mean (SD) falls by modality and difficulty level.}
+  \label{tab:descriptives}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Level} & \textbf{Haptic} & \textbf{Audio} & \textbf{None} & \textbf{N per cell} \\
+    \midrule
+    Practice & 4.88 (7.34) & 0.33 (0.50) & 3.00 (4.17) & 8 \\
+    Easy & 3.50 (5.71) & 0.33 (0.71) & 0.62 (0.74) & 8 \\
+    Medium & 3.62 (6.39) & 2.44 (3.81) & 3.62 (6.32) & 8 \\
+    Hard & 13.00 (4.04) & 11.78 (7.36) & 13.25 (5.18) & 8 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ========== Statistical Tests ==========
+
+\subsubsection{Kruskal-Wallis Tests (3-group)}
+
+\textit{Easy level:} H(2) = 3.294, p = 0.1927 (n.s.)
+\textit{Medium level:} H(2) = 0.600, p = 0.7410 (n.s.)
+\textit{Hard level:} H(2) = 0.477, p = 0.7879 (n.s.)
+
+\subsubsection{Pairwise Mann-Whitney U (Holm-corrected)}
+
+\textit{Easy level}:
+  Haptic vs Audio: U = 52.0, p = 0.2810, r = -0.444 (n.s.)
+  Haptic vs None: U = 40.5, p = 0.3723, r = -0.266 (n.s.)
+  Audio vs None: U = 27.0, p = 0.6681, r = 0.250 (n.s.)
+
+\textit{Medium level}:
+  Haptic vs Audio: U = 40.5, p = 1.0000, r = -0.125 (n.s.)
+  Haptic vs None: U = 30.0, p = 0.8717, r = 0.062 (n.s.)
+  Audio vs None: U = 28.0, p = 1.0000, r = 0.222 (n.s.)
+
+\textit{Hard level}:
+  Haptic vs Audio: U = 38.0, p = 0.8840, r = -0.056 (n.s.)
+  Haptic vs None: U = 28.5, p = 1.0000, r = 0.109 (n.s.)
+  Audio vs None: U = 28.5, p = 1.0000, r = 0.208 (n.s.)
+
+
+\subsubsection{Change-from-Baseline Analysis}
+
+Deltas computed as: $\Delta_{L_i} = $ falls at Level $i$ minus falls at Practice (L1).
+
+\textbf{Haptic}:
+  Level 2: mean $\Delta$ = -1.38 (SD 3.89), n = 8
+  Level 3: mean $\Delta$ = -1.25 (SD 5.63), n = 8
+  Level 4: mean $\Delta$ = 8.12 (SD 4.70), n = 8
+
+\textbf{Audio}:
+  Level 2: mean $\Delta$ = 0.00 (SD 1.00), n = 9
+  Level 3: mean $\Delta$ = 2.11 (SD 3.72), n = 9
+  Level 4: mean $\Delta$ = 11.44 (SD 7.54), n = 9
+
+\textbf{None}:
+  Level 2: mean $\Delta$ = -2.38 (SD 4.24), n = 8
+  Level 3: mean $\Delta$ = 0.62 (SD 7.74), n = 8
+  Level 4: mean $\Delta$ = 10.25 (SD 4.74), n = 8
+
+
+\subsubsection{Sensitivity Analysis (Winsorized Falls at 95th Percentile)}
+
+Kruskal-Wallis H tests with winsorized falls:
+\textit{Easy level:} H(2) = 3.558, p = 0.1688 (n.s.)
+\textit{Medium level:} H(2) = 0.600, p = 0.7410 (n.s.)
+\textit{Hard level:} H(2) = 0.540, p = 0.7633 (n.s.)
+
+% ========== WITHIN-SESSION LEARNING AND TRAJECTORY METRICS ==========
+
+\subsubsection{Path Deviation (Distance from Path Center)}
+
+\textit{Haptic}:
+  L1: 0.275 ± 0.129 units (n=2815 samples)
+  L2: 0.260 ± 0.134 units (n=1801 samples)
+  L3: 0.316 ± 0.125 units (n=2293 samples)
+  L4: 0.353 ± 0.093 units (n=4663 samples)
+
+\textit{Audio}:
+  L1: 0.238 ± 0.131 units (n=1276 samples)
+  L2: 0.223 ± 0.127 units (n=933 samples)
+  L3: 0.269 ± 0.136 units (n=2682 samples)
+  L4: 0.363 ± 0.079 units (n=4611 samples)
+
+\textit{None}:
+  L1: 0.261 ± 0.123 units (n=2052 samples)
+  L2: 0.248 ± 0.122 units (n=1976 samples)
+  L3: 0.293 ± 0.129 units (n=2515 samples)
+  L4: 0.366 ± 0.076 units (n=4611 samples)
+
+\subsubsection{Trajectory Smoothness (Mean Acceleration)}
+
+\textit{Haptic}:
+  L1: mean accel = 0.1303 (n=2815 samples)
+  L2: mean accel = 0.1548 (n=1801 samples)
+  L3: mean accel = 0.1547 (n=2293 samples)
+  L4: mean accel = 0.2296 (n=4663 samples)
+
+\textit{Audio}:
+  L1: mean accel = 0.1558 (n=1276 samples)
+  L2: mean accel = 0.0864 (n=933 samples)
+  L3: mean accel = 0.1396 (n=2682 samples)
+  L4: mean accel = 0.2384 (n=4611 samples)
+
+\textit{None}:
+  L1: mean accel = 0.1572 (n=2052 samples)
+  L2: mean accel = 0.0999 (n=1976 samples)
+  L3: mean accel = 0.1436 (n=2515 samples)
+  L4: mean accel = 0.2174 (n=4611 samples)
+
+
+% ========== ADDITIONAL ANALYSES ==========
+
+\subsubsection{Checkpoints Passed}
+
+\textit{Haptic}:
+  L1: 0.00 ± 0.00 (n=8)
+  L2: 0.00 ± 0.00 (n=8)
+  L3: 0.00 ± 0.00 (n=8)
+  L4: 0.00 ± 0.00 (n=8)
+
+\textit{Audio}:
+  L1: 0.00 ± 0.00 (n=9)
+  L2: 0.00 ± 0.00 (n=9)
+  L3: 0.00 ± 0.00 (n=9)
+  L4: 0.00 ± 0.00 (n=9)
+
+\textit{None}:
+  L1: 0.00 ± 0.00 (n=8)
+  L2: 0.00 ± 0.00 (n=8)
+  L3: 0.00 ± 0.00 (n=8)
+  L4: 0.00 ± 0.00 (n=8)
+
+\subsubsection{Proximity Zone Time (percent of round)}
+
+\textit{Haptic}:
+  L1: NEAR=16.3%, WARNING=8.6%, DANGER=3.7%
+  L2: NEAR=12.0%, WARNING=6.9%, DANGER=4.6%
+  L3: NEAR=13.2%, WARNING=5.6%, DANGER=2.9%
+  L4: NEAR=13.3%, WARNING=6.7%, DANGER=4.7%
+
+\textit{Audio}:
+  L1: NEAR=16.5%, WARNING=3.9%, DANGER=0.8%
+  L2: NEAR=4.3%, WARNING=1.7%, DANGER=0.4%
+  L3: NEAR=13.3%, WARNING=5.3%, DANGER=1.9%
+  L4: NEAR=15.8%, WARNING=7.0%, DANGER=5.1%
+
+\textit{None}:
+  L1: NEAR=13.2%, WARNING=7.0%, DANGER=3.1%
+  L2: NEAR=13.2%, WARNING=3.2%, DANGER=2.2%
+  L3: NEAR=15.6%, WARNING=6.6%, DANGER=2.5%
+  L4: NEAR=15.9%, WARNING=7.7%, DANGER=4.9%
+
+\subsubsection{Tilt Magnitude (rad/s)}
+
+\textit{Haptic}:
+  L1: 22.354 ± 16.094
+  L2: 19.997 ± 12.117
+  L3: 21.763 ± 11.911
+  L4: 19.483 ± 13.150
+
+\textit{Audio}:
+  L1: 15.945 ± 12.712
+  L2: 22.126 ± 13.489
+  L3: 26.740 ± 16.899
+  L4: 23.443 ± 17.562
+
+\textit{None}:
+  L1: 24.964 ± 15.438
+  L2: 33.432 ± 24.554
+  L3: 25.798 ± 14.713
+  L4: 19.652 ± 12.971
+
+
+% ========== INDIVIDUAL DIFFERENCES & NEW ANALYSES ==========
+
+\subsubsection{Age Correlations with Baseline Performance}
+
+age_vs_practice_falls: r = 0.153, p = 0.4660, n = 25
+age_vs_mean_delta: r = 0.131, p = 0.5327, n = 25
+
+\subsubsection{Handedness × Modality Cross-Tabulation (Level 2 / Easy)}
+
+\textit{Left}:
+  none: mean falls = 0.00 (n=1)
+
+\textit{Right}:
+  haptic: mean falls = 3.50 (n=8)
+  audio: mean falls = 0.33 (n=9)
+  none: mean falls = 0.83 (n=6)
+
+\textit{Either}:
+  none: mean falls = 0.00 (n=1)
+
+\subsubsection{Bayes Factors (Evidence for Null Hypothesis)}
+
+Level 2: BF01 ≈ 83.81 (supports null)
+Level 3: BF01 ≈ 6.99 (supports null)
+Level 4: BF01 ≈ 5.39 (supports null)
+
+\subsubsection{Checkpoint Data Validity}
+
+haptic: 100.0\% of rounds had 0 checkpoints (n=32/32)
+audio: 100.0\% of rounds had 0 checkpoints (n=36/36)
+none: 100.0\% of rounds had 0 checkpoints (n=32/32)
+
+\subsubsection{Fatigue Analysis (Early vs Late Sessions)}
+
+\textit{Haptic}:
+  L2: early=4.50, late=2.50, delta=-2.00
+  L3: early=5.00, late=2.25, delta=-2.75
+  L4: early=11.00, late=15.00, delta=4.00
+
+\textit{Audio}:
+  L2: early=0.50, late=0.20, delta=-0.30
+  L3: early=2.25, late=2.60, delta=0.35
+  L4: early=16.25, late=8.20, delta=-8.05
+
+\textit{None}:
+  L2: early=0.50, late=0.75, delta=0.25
+  L3: early=5.25, late=2.00, delta=-3.25
+  L4: early=12.50, late=14.00, delta=1.50
+
+\subsubsection{Time-to-Recovery from Proximity Escalations}
+
+haptic: median=400ms, mean=621ms, no-recovery=3.0\%
+audio: median=416ms, mean=598ms, no-recovery=2.1\%
+none: median=417ms, mean=603ms, no-recovery=1.4\%
+
+\subsubsection{Tilt Reversal Frequency (Corrective Response)}
+
+haptic: 27.2\% of escalations followed by tilt reversal (n=893 events)
+audio: 43.0\% of escalations followed by tilt reversal (n=633 events)
+none: 32.6\% of escalations followed by tilt reversal (n=841 events)
+
+\subsubsection{Qualitative Themes from Post-Round Surveys}
+
+\textbf{Cognitive Load} (n=1):
+  Example 1: \textit{``The sounds made me nervous. It's a good training for elders or students with special needs...''}
+
+\textbf{Distraction} (n=0):
+
+\textbf{Effectiveness} (n=1):
+  Example 1: \textit{``The sounds made me nervous. It's a good training for elders or students with special needs...''}
+
+\textbf{Difficulty} (n=0):
+
+\textbf{Positive} (n=0):
+
+\textbf{Negative} (n=0):
+
+\textbf{Other} (n=1):
+  Example 1: \textit{``The sounds made me nervous. It's a good training for elders or students with special needs...''}

@@ -1,0 +1,106 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    PATHSENSE PRESENTATION — ONE-PAGE CHEAT SHEET
+                              June 2, 2026 | 5 Minutes
+═══════════════════════════════════════════════════════════════════════════════
+
+KEY NUMBERS TO MEMORIZE:
+  • 25 participants (3 groups, ~8-9 each)
+  • 4 difficulty levels
+  • Practice round: Haptic 4.88 falls vs Audio 0.33 falls = 10× difference
+  • Bayes factor: BF₀₁ ≈ 84 (strong evidence for null)
+
+───────────────────────────────────────────────────────────────────────────────
+STORY ARC (Remember this):
+───────────────────────────────────────────────────────────────────────────────
+
+1. PROBLEM: Off-hand tilt feels awkward (why?)
+2. INSIGHT: Body schema—phone needs to give feedback
+3. QUESTION: Which feedback works best? (haptic vs audio vs none)
+4. DESIGN: PathSense—tightrope game, 3 groups, 4 levels
+5. DATA: All groups follow same learning curve (no winner)
+6. DISCOVERY: Baseline wasn't equal! (10× difference pre-feedback)
+7. IMPLICATION: Baseline control matters—can't ignore it
+8. WHO BENEFITS: Gamers w/ motor challenges, older adults, one-handed users
+9. NEXT: Scale up, test adults, better haptics, real-world testing
+
+───────────────────────────────────────────────────────────────────────────────
+SLIDES & TIMING:
+───────────────────────────────────────────────────────────────────────────────
+
+Slide 1  (0:00-0:15)  Title — Set tone, make eye contact
+Slide 2  (0:15-1:00)  Problem — Act it out, point to image, relatable
+Slide 3  (1:00-1:45)  Body Schema — Use "writing in the dark" analogy
+Slide 4  (1:45-2:15)  Insight — Pause between each feedback type
+Slide 5  (2:15-3:05)  PathSense — Point to image, three conditions
+Slide 6  (3:05-3:25)  The Numbers — Quick context, don't dwell
+Slide 7  (3:25-4:10)  Learning Curve — Trace with finger, emphasize convergence
+Slide 8  (4:10-4:30)  Plot Twist — PAUSE. Dramatic. Build suspense.
+Slide 9  (4:30-5:30)  Discovery — Point to numbers, say "10-fold"
+Slide 10 (5:30-6:45)  Why It Matters — THREE points: designers, accessibility, research
+Slide 11 (6:45-8:00)  Who Benefits — THREE personas: gamers, older adults, one-handed
+Slide 12 (8:00-8:30)  What's Next — Quick, confident, four directions
+Slide 13 (8:30-9:00)  Closing — SLOW DOWN. Eye contact. Let silence sit.
+
+───────────────────────────────────────────────────────────────────────────────
+CRITICAL MOMENTS (Don't rush these):
+───────────────────────────────────────────────────────────────────────────────
+
+✓ Slide 8: "But here's where it gets interesting..." — PAUSE 2-3 seconds
+✓ Slide 9: After saying "10-fold difference" — PAUSE 2-3 seconds
+✓ Slide 10-11: Each application/persona — separate with PAUSE
+✓ Slide 13: "Thank you" — PAUSE 2-3 seconds before sitting down
+
+───────────────────────────────────────────────────────────────────────────────
+TONE CHECKLIST:
+───────────────────────────────────────────────────────────────────────────────
+
+Energy:    Low (0:00) → High (4:30) → Settled (8:00) → Reflective (9:00)
+Pace:      Conversational (talk to friends, not lecturing)
+Gestures:  Point, trace, count on fingers (don't hide behind podium)
+Eyes:      Scan room, don't stare at one person, professor during slide 10
+
+───────────────────────────────────────────────────────────────────────────────
+TRANSITIONS (Say these exactly):
+───────────────────────────────────────────────────────────────────────────────
+
+S1→S2: "Let me start with a question you've probably all experienced..."
+S3→S4: "Which brings us to our big question: what if we gave the phone a voice?"
+S4→S5: "To answer that, we built something. We called it PathSense."
+S7→S8: "So what does this tell us? No modality won. But stick with me..."
+S8→S9: "Before we even started giving feedback, something fishy was happening..."
+S9→S10: "Now, you might think this is bad news. It's not. Here's why..."
+S10→S11: "So who actually benefits from this work?"
+S12→S13: "Let me leave you with one thought..."
+
+───────────────────────────────────────────────────────────────────────────────
+IF SOMEONE ASKS A QUESTION:
+───────────────────────────────────────────────────────────────────────────────
+
+Q: "Why didn't any modality win?"
+A: "Because we didn't control for baseline. The real finding is that baseline
+   control matters. That's what future studies need to account for."
+
+Q: "Isn't a null result a failure?"
+A: "No—null results force us to ask harder questions. The blueprint we built
+   from this study is actually more valuable than a simple 'haptic wins' result."
+
+Q: "How does this apply to real games?"
+A: "Right now games don't measure baseline. Our work says: measure first, THEN
+   add feedback. Especially for accessibility—gamers with motor challenges need
+   that baseline assessment."
+
+───────────────────────────────────────────────────────────────────────────────
+BEFORE YOU START:
+───────────────────────────────────────────────────────────────────────────────
+
+☐ Presentation.pdf open in FULLSCREEN
+☐ Print this cheat sheet (for reference only, don't read from it)
+☐ Backup USB with PDF ready
+☐ Take three deep breaths
+☐ Remember: You know this story better than anyone in that room
+☐ Speak to PEOPLE, not slides
+☐ PAUSE. (Seriously. Pauses are powerful.)
+
+═══════════════════════════════════════════════════════════════════════════════
+                              YOU'VE GOT THIS. 🚀
+═══════════════════════════════════════════════════════════════════════════════
