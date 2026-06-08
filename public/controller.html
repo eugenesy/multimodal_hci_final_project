@@ -199,12 +199,9 @@
     <div class="ctrl-body">
       <div class="bh-eyebrow">Participant Setup</div>
       <div class="ctrl-headline">Join<br>Session</div>
+      <div id="join-participant-id" style="font-family:'Syne',sans-serif;font-size:13px;
+           font-weight:700;letter-spacing:0.14em;color:var(--red);margin-bottom:14px"></div>
       <div class="bh-rule" style="margin-bottom:14px"></div>
-
-      <label class="bh-field-label" for="join-name">Your Name</label>
-      <input id="join-name" class="bh-input" type="text" maxlength="20"
-        placeholder="Enter name…" autocomplete="off" autocorrect="off"
-        autocapitalize="words" spellcheck="false" />
 
       <label class="bh-field-label">Handedness</label>
       <div class="bh-chip-row" id="chips-hand">
@@ -213,7 +210,12 @@
         <div class="bh-chip" data-val="Either">Either</div>
       </div>
 
-      <label class="bh-field-label">Gaming experience</label>
+      <label class="bh-field-label">Video game experience</label>
+      <div style="font-family:'Barlow',sans-serif;font-size:11px;color:var(--gray);
+                  letter-spacing:0.04em;margin:-6px 0 8px">
+        None — don't play · Casual — occasionally (&lt;2h/week) ·
+        Regular — most days (2–7h/week) · Frequent — daily (7h+/week)
+      </div>
       <div class="bh-chip-row" id="chips-gaming">
         <div class="bh-chip" data-val="None">None</div>
         <div class="bh-chip" data-val="Casual">Casual</div>
@@ -221,7 +223,12 @@
         <div class="bh-chip" data-val="Frequent">Frequent</div>
       </div>
 
-      <label class="bh-field-label">Tilt game experience?</label>
+      <label class="bh-field-label">Tilt-game experience</label>
+      <div style="font-family:'Barlow',sans-serif;font-size:11px;color:var(--gray);
+                  letter-spacing:0.04em;margin:-6px 0 8px">
+        Have you played tilt-controlled games before?
+        (e.g. mobile maze/balance games, Labyrinth, Marble Madness)
+      </div>
       <div class="bh-chip-row" id="chips-tilt">
         <div class="bh-chip" data-val="Yes">Yes</div>
         <div class="bh-chip" data-val="No">No</div>

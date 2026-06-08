@@ -227,6 +227,26 @@
       letter-spacing: 0.08em;
     }
 
+    .modal-title {
+      font-family: 'Syne', sans-serif; font-size: 16px;
+      font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px;
+    }
+    .modal-body {
+      font-family: 'Barlow', sans-serif; font-size: 14px;
+      line-height: 1.5; margin-bottom: 24px; color: var(--black);
+    }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-btn-yes {
+      flex: 1; padding: 13px; background: var(--red); color: #fff;
+      border: none; font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 13px; letter-spacing: 0.1em; cursor: pointer;
+    }
+    .modal-btn-cancel {
+      flex: 1; padding: 13px; background: transparent;
+      border: 1.5px solid var(--black); font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 13px; letter-spacing: 0.1em; cursor: pointer;
+    }
+
     /* ── Export ── */
     .export-btn {
       border: 1.5px solid var(--black);
@@ -305,9 +325,10 @@
       </button>
       <div id="session-progress" style="display:none">
         <div id="level-pip-row" style="display:flex;gap:8px;margin-bottom:10px">
-          <div class="level-pip" data-lvl="1">L1</div>
-          <div class="level-pip" data-lvl="2">L2</div>
-          <div class="level-pip" data-lvl="3">L3</div>
+          <div class="level-pip" data-lvl="1">PRAC</div>
+          <div class="level-pip" data-lvl="2">L1</div>
+          <div class="level-pip" data-lvl="3">L2</div>
+          <div class="level-pip" data-lvl="4">L3</div>
         </div>
       </div>
       <div id="lobby-btn" onclick="adminBackToLobby()" style="display:none">
@@ -323,8 +344,8 @@
         <div class="results-empty">Results appear here after each round</div>
       </div>
       <div style="display:flex;gap:5px;margin-top:auto;padding-top:10px">
-        <a href="/export-csv"    download class="export-btn" style="flex:1">↓ CSV</a>
-        <a href="/export-survey" download class="export-btn" style="flex:1">↓ SURVEY</a>
+        <a href="/data"        class="export-btn" style="flex:1">⊞ VIEW DATA</a>
+        <a href="/download-db" download class="export-btn" style="flex:1">↓ DOWNLOAD DB</a>
       </div>
     </div>
 
@@ -332,7 +353,23 @@
 
   <div id="notification"></div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Session success/failure confirmation modal -->
+  <div id="session-confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:1001; align-items:center; justify-content:center;">
+    <div style="background:var(--cream); border:2.5px solid var(--black); padding:32px; max-width:380px; width:90%;">
+      <div class="modal-title">SESSION COMPLETE</div>
+      <div class="modal-body">
+        Participant <strong id="session-confirm-name"></strong> finished the practice round + all 3 levels.<br><br>
+        Was this session <strong>successful</strong> and should the data be saved?
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn-yes" onclick="confirmSession(true)">YES — SAVE &amp; NEXT</button>
+        <button class="modal-btn-cancel" style="border-color:var(--red);color:var(--red)" onclick="confirmSession(false)">NO — RETRY SAME ID</button>
+      </div>
+    </div>
+  </div>
+
+
+<script src="/socket.io/socket.io.js"></script>
   <script src="/js/admin.js"></script>
 </body>
 </html>

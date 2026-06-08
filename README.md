@@ -1,140 +1,94 @@
 # PathSense
 
-Single-player tilt-controlled tightrope balance game for proximity-feedback research. The participant connects via QR code on a provided phone and keeps a ball on a narrow pre-designed path by tilting with their non-dominant hand. Proximity warnings (haptic / audio / none) escalate as the ball approaches the path edge.
+**A smartphone-native tightrope balance game for proximity-feedback research.**
 
-See `RESEARCH.md` for the full study design, hypotheses, and references.
+Participants hold an Android phone with their non-dominant hand and tilt it to keep a ball on a narrow path. Three between-subjects groups receive different proximity feedback modalities (haptic, audio, none) as the ball approaches the path edge. Falls are the primary outcome measure.
 
----
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org) v18 or later
-- A laptop and an external monitor (or two browser windows)
-- Player phones on the **same Wi-Fi network** as the laptop
+Built for a Multimodal HCI course final project at NTU × Academia Sinica, 2026.
 
 ---
 
-## First-time setup
+## Study Summary
+
+- **25 participants**, ages 13–18, non-dominant hand only
+- **3 modalities**: haptic vibration, audio tones, no feedback
+- **4 difficulty levels**: Practice → Easy → Medium → Hard
+- **Key finding**: No significant modality effect (Kruskal-Wallis p > 0.19; BF₀₁ ≈ 84 at Easy level), but a 10× baseline gap between groups reveals individual differences matter more than modality choice
+
+Full results in [`paper_writing/paper.pdf`](paper_writing/paper.pdf).
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Game engine | [Phaser 3](https://phaser.io/) |
+| Server | Node.js + Socket.IO |
+| Transport | HTTPS (self-signed cert for gyroscope access) |
+| Gyroscope | GyroNorm.js |
+| Database | SQLite via better-sqlite3 |
+| Analysis | Python (pandas, scipy, matplotlib) |
+| Paper | LaTeX / ACM sigconf (tectonic) |
+
+---
+
+## How to Run
+
+### Prerequisites
+- Node.js v18+
+- OpenSSL (for HTTPS certificate)
+
+### Setup
 
 ```bash
-cd body-schema-hack
 npm install
-```
 
-### HTTPS (required for gyroscope on phones)
-
-Phones need HTTPS to use the gyroscope. Generate a self-signed certificate once:
-
-```bash
+# Generate HTTPS cert (required for gyroscope on phones)
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes \
   -subj "/CN=localhost"
-```
 
-Then install `cert.pem` as a trusted certificate on each phone:
-1. Open `https://<your-laptop-ip>:3000/cert` on the phone browser
-2. Download and install the certificate when prompted
-3. On iOS: go to **Settings → General → VPN & Device Management → your cert → Trust**
-4. On Android: follow the install prompt, choose "Wi-Fi" or "VPN and apps" as the purpose
-
-> Without the certificate, the gyroscope will not work. The server falls back to HTTP automatically if no cert is found, which is fine for testing on desktop.
-
----
-
-## Running the server
-
-```bash
 node server.js
 ```
 
-The terminal will print:
+Three URLs are printed on boot:
+- `https://localhost:3000/` — Game display (external monitor)
+- `https://localhost:3000/admin` — Researcher admin panel
+- `https://<ip>:3000/controller` — Player phone (shown as QR on admin panel)
 
-```
-╔══════════════════════════════════════════════════════════════╗
-║                PathSense — Study Platform                   ║
-╠══════════════════════════════════════════════════════════════╣
-║  Game Display : https://localhost:3000                      ║
-║  Admin Panel  : https://localhost:3000/admin                ║
-║  Controller   : https://192.168.x.x:3000/controller        ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
-### Open two browser tabs
-
-| Tab | URL | Where to put it |
-|-----|-----|-----------------|
-| Game Display | `https://localhost:3000/` | External monitor (full-screen with F11) |
-| Admin Panel | `https://localhost:3000/admin` | Laptop screen |
+To trust the cert on phones: open `https://<ip>:3000/cert` and install it.
 
 ---
 
-## Running a session
-
-1. **Start the server** (`node server.js`)
-2. **Open the two tabs** as above
-3. Participant scans the QR code shown on the admin panel with the **provided Android phone**
-4. Participant types their name and taps **Join Game**
-5. Admin panel shows the participant's name and assigned modality (haptic / audio / none)
-6. Instruct participant to use their **non-dominant hand only** to hold and tilt the phone
-7. Click **▶ Level 1** — participant navigates the ball along the tightrope path for 90 s
-8. After Level 1 ends, results screen shows briefly — click **▶ Level 2**, then **▶ Level 3**
-9. After Level 3, participant completes the post-session survey on their phone
-
-### Exporting data
-
-Click **↓ Export CSV** in the admin panel at any time. The file downloads from `data/results_YYYYMMDD.csv`.
-
-Data is also written automatically to that file after every round — you do not need to click export to save it.
-
----
-
-## Stopping the server
-
-In the terminal where the server is running, press:
+## Repository Structure
 
 ```
-Ctrl + C
-```
-
-That's it. All round data is already saved to `data/results_YYYYMMDD.csv`. Player history (modality rotation, play counts) is saved to `data/players.json`.
-
----
-
-## File structure
-
-```
-body-schema-hack/
-├── server.js               — Node.js server (Socket.io, routing, CSV logging)
-├── cert.pem / key.pem      — Self-signed HTTPS certificate (generated by you)
-├── RESEARCH.md             — Study design, RQs, hypotheses, references
-├── data/
-│   ├── results_YYYYMMDD.csv — Round-by-round results (auto-created)
-│   └── players.json         — Player history and modality rotation (auto-created)
-└── public/
-    ├── index.html           — Game display (external monitor)
-    ├── admin.html           — Researcher admin panel (laptop)
-    ├── controller.html      — Player phone controller
-    └── js/
-        ├── display.js       — Game display logic
-        ├── admin.js         — Admin panel logic
-        ├── controller.js    — Phone controller logic
-        └── game.js          — Phaser maze game
+.
+├── server.js               # Node.js game server (Socket.IO, SQLite)
+├── public/
+│   ├── index.html          # Game display
+│   ├── admin.html          # Researcher panel
+│   ├── controller.html     # Phone controller
+│   └── js/
+│       ├── game.js         # Phaser 3 MarbleScene
+│       ├── display.js      # Display socket client
+│       ├── admin.js        # Admin socket client
+│       └── controller.js   # Phone gyroscope + feedback
+├── paper_writing/
+│   ├── paper.tex           # Final paper (ACM sigconf)
+│   ├── paper.pdf           # Compiled PDF
+│   ├── presentation.tex    # Beamer slides
+│   ├── analysis.py         # Statistical analysis script
+│   ├── mhci.bib            # Bibliography
+│   └── images/             # Figures and photos
+├── CLAUDE.md               # Architecture and dev notes
+└── RESEARCH.md             # Study design and hypotheses
 ```
 
 ---
 
-## Troubleshooting
+## Paper
 
-**Gyroscope not working on phone**
-- Must be HTTPS. Check the terminal — if it says "falling back to HTTP", generate the certificate.
-- On iOS, the certificate must be explicitly trusted in Settings.
+The final paper is [`paper_writing/paper.pdf`](paper_writing/paper.pdf) (4 pages, ACM sigconf format).
 
-**Phone can't reach the server**
-- Make sure the phone and laptop are on the same Wi-Fi network.
-- Use the IP address shown in the terminal (e.g. `https://192.168.1.x:3000/controller`), not `localhost`.
-
-**"Connection rejected" on phone**
-- If a game is in progress, new players cannot join until the round ends and the display returns to the waiting screen.
-- Maximum 8 players per session.
-
-**Player history not persisting after restart**
-- Check that `data/players.json` exists and is not empty. It is written after every round.
+Key sections: PathSense platform description, between-subjects study design, Kruskal-Wallis and Mann-Whitney results with Bayes factors, time-locked steering response analysis.

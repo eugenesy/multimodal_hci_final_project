@@ -45,6 +45,14 @@ socket.on('ROUND_COMPLETE', ({ rankings, round }) => {
   _updateLevelPips();
 });
 
+socket.on('FORCE_RELOAD', () => window.location.reload());
+
+socket.on('SESSION_COMPLETE', ({ participantName } = {}) => {
+  const el = document.getElementById('session-confirm-name');
+  if (el) el.textContent = participantName || '';
+  document.getElementById('session-confirm-modal').style.display = 'flex';
+});
+
 // ─── Controls ─────────────────────────────────────────────────────────────────
 function adminStartSession() {
   if (currentPhase !== 'LOBBY' || players.length < 1) return;
@@ -53,6 +61,20 @@ function adminStartSession() {
 
 function adminBackToLobby() {
   socket.emit('BACK_TO_LOBBY');
+}
+
+// ─── Session confirm ──────────────────────────────────────────────────────────
+async function confirmSession(success) {
+  document.getElementById('session-confirm-modal').style.display = 'none';
+  try {
+    await fetch('/confirm-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success }),
+    });
+  } catch {}
+  // FORCE_RELOAD is broadcast by server; admin reloads itself too
+  window.location.reload();
 }
 
 // ─── QR code ─────────────────────────────────────────────────────────────────
@@ -81,10 +103,14 @@ function _setPhase(phase) {
   if (phase === 'LOBBY') { completedLevels = new Set(); currentRound = 0; }
 
   if (badge) {
-    badge.textContent = phase === 'GAME' ? `GAME — L${currentLevel}` : 'LOBBY';
+    const lvlLabel = currentLevel === 1 ? 'PRAC' : `L${currentLevel - 1}`;
+    badge.textContent = phase === 'GAME' ? `GAME — ${lvlLabel}` : 'LOBBY';
     badge.className   = phase === 'GAME' ? 'game' : '';
   }
-  if (roundLbl) roundLbl.textContent = phase === 'GAME' ? `Level ${currentLevel} / 3` : '';
+  if (roundLbl) {
+    const lvlDisp = currentLevel === 1 ? 'Practice' : `Level ${currentLevel - 1} / 3`;
+    roundLbl.textContent = phase === 'GAME' ? lvlDisp : '';
+  }
   if (lobbyBtn) lobbyBtn.style.display = phase === 'GAME' ? 'flex' : 'none';
 
   const canStart = phase === 'LOBBY' && players.length >= 1;

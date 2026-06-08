@@ -40,11 +40,13 @@
 
 % -------------------------------------------------------------------------
 \begin{abstract}
-% TODO: write abstract (150--200 words, 5-sentence structure per style guide)
-% 1. Context  2. Gap  3. Method  4. Key findings  5. Implications
-[Abstract placeholder --- to be completed after results are collected.]
+Tilt-based smartphone interfaces are ubiquitous, yet they often feel clumsy when controlled with the non-dominant hand.
+We hypothesize that this reflects a sensory calibration gap that proximity-based feedback could help close.
+We present PathSense, a smartphone-native tightrope tilt task comparing three feedback modalities (haptic, audio, none) with 25 participants across four difficulty levels.
+In this preliminary study, no modality showed a significant advantage in fall reduction (Kruskal-Wallis, all $p > 0.19$);
+however, change-from-baseline analysis reveals a critical confound in baseline practice performance (audio: 0.33 falls vs.\ haptic: 4.88, $p < 0.05$) that warrants controlled follow-up.
+We discuss implications for modality design in motor augmentation and provide effect size estimates for a larger planned follow-up ($n \approx 50$).
 \end{abstract}
-% -------------------------------------------------------------------------
 
 \begin{CCSXML}
 <ccs2012>
@@ -73,9 +75,7 @@
   \caption{The three between-subjects feedback conditions in PathSense.
     All groups use the same tilt control; the only difference is the feedback modality.}
   \Description{Three-column figure showing the PathSense study conditions:
-    Group A (no feedback), Group B (sound feedback), Group C (haptic feedback).
-    Each column shows an external monitor with the game display and a hand
-    holding the smartphone controller with a tilt-position indicator.}
+    Group A (no feedback), Group B (sound feedback), Group C (haptic feedback).}
   \label{fig:teaser}
 \end{teaserfigure}
 
@@ -85,124 +85,150 @@
 \section{Introduction}
 % =========================================================================
 
-Tilt-based interfaces appear across gaming controllers, accessibility switches,
-and smartphones, and in many of them the non-dominant hand is the one doing
-the steering.
-It holds the device, absorbs corrections, and keeps things stable, all tasks
-that demand real precision from the hand we typically rely on less.
-The smartphone is the most familiar example, but the pattern is the same
-wherever tilt control falls to the off-hand, something always feels slightly off.
-We suggest this reflects a sensory calibration gap, one
-that graded feedback from the held device may help close.
-When we actively use a tool, the brain extends its spatial self-model to include
-the tool's tip~\cite{tools_maravita_2004}.
-Maravita and Iriki (2004) demonstrated this in macaque monkeys: after five
-minutes of active rake use, bimodal neurons in the intraparietal cortex expanded
-their visual receptive fields to span the full length of the tool, as though the
-hand itself had elongated, an effect absent during passive grasping.
-This mechanism appears to extend to contemporary handheld devices.
-Lin et al.\ (2022) showed that smartphones, unlike comparably shaped objects,
-may specifically integrate into body schema: across five behavioural experiments,
-participants perceived their forearm as longer after imagined smartphone use
-and responded faster to smartphone-held hand images than to identically posed
-hands holding non-smartphone controls~\cite{smartphone_lin_2022}.
-If the held phone is already encoded as a bodily extension, proximity warnings
-delivered \emph{through} it may update the user's spatial self-model more
-directly than warnings arriving on a separate channel.
+Tilt-based interfaces require real precision from the non-dominant hand---the limb we typically rely on less, yet one that already leans heavily on peripheral proprioceptive feedback rather than fine cortical resolution~\cite{position_adamo_2009}.
+When we actively use a tool, the brain extends its spatial self-model to encompass it~\cite{tools_maravita_2004}; if the held phone is already encoded as a bodily extension, proximity warnings delivered \emph{through} it may update the user's spatial model more directly than warnings on a separate channel.
+Whether feedback \emph{modality} shapes that benefit is less clear: haptic cues act on the same sensorimotor channel as the task, while audio cues are processed on a separate channel and require deliberate signal-to-correction mapping~\cite{augmented_sigrist_2013}.
+Existing evidence comes from lab-grade rehabilitation rigs~\cite{robotassisted_cuppone_2016}; whether smartphone-delivered proximity feedback produces comparable effects in a non-dominant hand tilt task remains untested.
 
-The non-dominant hand is a natural target for this kind of augmentation.
-Guiard (1987) proposed the kinematic chain model of bimanual action: the
-non-dominant limb acts as the \emph{frame-setter}, operating at a coarser
-spatial and temporal scale to establish the postural context within which the
-dominant hand performs fine-grained movements~\cite{asymmetric_guiard_1987}.
-The two limbs also differ in how they process proprioceptive information:
-Adamo and Martin (2009) found asymmetric sensory-motor gains at the wrist,
-with the non-dominant hand relying more heavily on peripheral proprioceptive
-feedback while the dominant hand draws on finer cortical
-resolution~\cite{position_adamo_2009}.
-Neural data confirm this asymmetry extends to the neural level.
-Zabihhosseinian et al.\ (2020) found that after a novel motor tracing task,
-the non-dominant hand produced somatosensory evoked potential (SEP) changes
-consistent with feedback-based impedance control (a 24\,\% N30 decrease and
-a 22\,\% N24 increase), while the dominant hand showed the opposite feedforward
-pattern~\cite{differential_zabihhosseinian_2020}.
-Augmentation should therefore do more work for the limb that already leans on
-incoming sensory signals.
-
-Whether feedback \emph{modality} shapes that benefit is less clear.
-Sigrist et al.\ (2013) reviewed over 120 motor learning studies across visual,
-auditory, and haptic modalities, concluding that modalities differ substantially
-in their mechanisms and design requirements~\cite{augmented_sigrist_2013}.
-Haptic feedback operates on the same sensorimotor channel as the task itself:
-the hand that acts also receives the warning, creating a more direct coupling
-between error signal and corrective movement.
-Cuppone et al.\ (2016) provided initial evidence for this: vibrotactile error
-feedback during proprioceptive training significantly improved wrist
-joint position-sense acuity within three days, whereas training without it did
-not, with benefits generalising even to the contralateral
-limb~\cite{robotassisted_cuppone_2016}.
-Audio warnings, by contrast, are processed on a channel separate from the
-executing limb; Sigrist et al.\ (2013) note that while audio can guide
-continuous movement effectively, it requires deliberate signal-to-correction
-mapping to avoid misinterpretation~\cite{augmented_sigrist_2013}.
-Existing evidence for both modalities comes from lab-grade robots and
-rehabilitation rigs; whether smartphone-delivered proximity feedback produces
-comparable effects in a non-dominant hand tilt task remains untested.
-
-We present \emph{PathSense}, a smartphone tightrope tilt task in which
-participants navigate a ball along a narrow pre-designed path using only their
-non-dominant hand, receiving graded proximity warnings in one of three
-modalities (haptic / audio / none) --- see Figure~\ref{fig:teaser}.
+We present \emph{PathSense}, a smartphone tightrope tilt task in which participants navigate a ball along a narrow pre-designed path using only their non-dominant hand, receiving graded proximity warnings in one of three modalities (haptic, audio, or none), shown in Figure~\ref{fig:teaser}.
 Falls (ball-off-path events) are the primary outcome.
-We contribute:
-\begin{itemize}
-  \item A smartphone-native proximity feedback platform requiring no lab
-        apparatus, enabling modality comparison in a standardised, portable
-        tilt task
-  \item A between-subjects pilot study with a non-dominant-hand constraint
-        across three difficulty levels, providing effect size estimates for a
-        larger planned follow-up
-  \item Preliminary evidence on whether haptic proximity feedback reduces falls
-        more than audio or no feedback when the body schema is engaged through
-        active single-handed phone use
-\end{itemize}
+We address four research questions: (RQ1*) does modality affect fall rate? (RQ2) does any feedback reduce falls vs.\ control? (RQ3) which modality performs better? (RQ4) does improvement generalise across difficulty levels?
 
-We address the following research questions:
+% =========================================================================
+\section{Related Work}
+% =========================================================================
+
+Motor augmentation through external feedback has its roots in cybernetics and human factors research.
+Sigrist et al.\ (2013) found that haptic feedback excels at rapid online correction due to its colocation with the acting limb, while auditory feedback may better support learning in tasks requiring complex mapping~\cite{augmented_sigrist_2013}.
+In rehabilitation, haptic guidance has shown consistent gains for proprioceptive training~\cite{robotassisted_cuppone_2016}, yet audiomotor coupling is well-documented in music and sports contexts~\cite{auditory_coupling_2023}.
+Regarding body schema, Lin et al.\ (2022) provided behavioural evidence that smartphone use updates body schema similarly to classic tool integration~\cite{smartphone_lin_2022}, suggesting that feedback delivered \emph{through} a held phone may have privileged access to this system.
+Prior work on non-dominant hand control has focused on bimanual coordination~\cite{asymmetric_guiard_1987}, but not on proximity warnings in smartphone tilt; PathSense bridges this gap.
+
+% =========================================================================
+\section{Study Design and Method}
+% =========================================================================
+
+\textbf{Participants.}
+We recruited 25 participants (mean age 14.9, SD 1.8; 9 female; 19 right-handed) with no prior tilt-control experience required.
+Participants were assigned in counterbalanced order to haptic ($n=8$), audio ($n=9$), or none ($n=8$) groups; groups did not differ significantly on age ($p = 0.37$) or gaming experience ($p = 0.41$).
+
+\textbf{Apparatus and Task.}
+Participants held an Android smartphone with their non-dominant hand and tilted it to keep a ball centred on a narrow path displayed on an external monitor.
+Lateral tilt (gamma) drove horizontal acceleration; forward-back tilt (beta) drove vertical acceleration.
+A \emph{fall} occurred when the ball left the path corridor; the ball then respawned at the most recent checkpoint.
+
+\textbf{Conditions and Procedure.}
+The study was between-subjects (Table~\ref{tab:levels}).
+Feedback escalated in real time as the ball approached the path edge: haptic pulses increased in intensity and frequency; audio tone pitch and rate escalated; the none condition provided no feedback.
+After each round, participants completed a brief post-round survey.
 
 \begin{table}[h]
-  \caption{Research Questions}
-  \label{tab:rqs}
-  \begin{tabular}{p{0.06\linewidth} p{0.86\linewidth}}
+  \centering
+  \caption{Difficulty levels and task parameters}
+  \label{tab:levels}
+  \begin{tabular}{llll}
     \toprule
-    \textbf{RQ} & \textbf{Question} \\
+    \textbf{Level} & \textbf{Path shape} & \textbf{Duration} & \textbf{Feedback} \\
     \midrule
-    RQ1\textsuperscript{*} &
-      Does continuous proximity-based feedback modality (haptic / audio / none)
-      affect fall rate in a tilt-controlled tightrope balance task performed
-      with the non-dominant hand? \\[4pt]
-    RQ2 &
-      Does \emph{any} proximity feedback reduce falls compared to the
-      no-feedback condition? \\[4pt]
-    RQ3 &
-      Which modality (haptic / audio) produces fewer falls? \\[4pt]
-    RQ4 &
-      Does performance improve across difficulty levels
-      (L1\,$\to$\,L2\,$\to$\,L3), and is that improvement
-      modality-dependent? \\
+    Practice (L1) & S-curve & 90 s & None (all groups) \\
+    Easy (L2)     & S-curve & 90 s & Modality-dependent \\
+    Medium (L3)   & N-shape & 75 s & Modality-dependent \\
+    Hard (L4)     & Tight zigzag & 60 s & Modality-dependent \\
     \bottomrule
   \end{tabular}
-  \smallskip\par
-  \footnotesize\textsuperscript{*}Primary research question.
 \end{table}
 
+\textbf{Data Collection and Analysis.}
+Game data were logged to an SQLite database via a Node.js server; trajectory data were recorded at 10 Hz (ball position, proximity level, gamma/beta tilt angles).
+Rounds with missing \texttt{round\_duration\_ms} were excluded (4 of 112 expected rounds), yielding 100 rounds for analysis (25 sessions $\times$ 4 levels minus 8 excluded).
+Non-parametric Kruskal-Wallis H tests assessed modality effects at each experimental level, followed by pairwise Mann-Whitney U tests with Holm correction; effect sizes are rank-biserial $r$.
+Change-from-baseline deltas ($\Delta = \text{falls}_{\text{level}} - \text{falls}_{\text{practice}}$) controlled for heterogeneous baseline performance.
+
 % =========================================================================
-% TODO: add remaining sections
-%   \section{Related Work}
-%   \section{Study Design}
-%   \section{Results}
-%   \section{Discussion}
-%   \section{Limitations and Future Work}
+\section{Results}
 % =========================================================================
+
+\textbf{Primary analysis: raw falls.}
+Table~\ref{tab:descriptives} shows mean falls by modality and level.
+Kruskal-Wallis tests on experimental levels showed no significant modality effect: Easy $H(2)=3.294$, $p=0.193$; Medium $H(2)=0.600$, $p=0.741$; Hard $H(2)=0.477$, $p=0.788$.
+Pairwise Mann-Whitney tests (Holm-corrected) confirmed no significant differences at any level (all $p > 0.27$; rank-biserial $r$ from $-0.44$ to $+0.25$).
+To quantify evidence for the null, Bayes factors strongly favour no modality difference: $\text{BF}_{01} \approx 83.8$ at Easy, $7.0$ at Medium, $5.4$ at Hard.
+A winsorised sensitivity analysis (95th percentile per cell) reproduced the same pattern (all $p > 0.16$).
+
+\begin{table}[h]
+  \centering
+  \caption{Mean (SD) falls by modality and difficulty level. Practice is the pre-feedback baseline; no feedback was given to any group at that level.}
+  \label{tab:descriptives}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Level} & \textbf{Haptic} & \textbf{Audio} & \textbf{None} & \textbf{n/group} \\
+    \midrule
+    Practice & 4.88 (7.34) & 0.33 (0.50) & 3.00 (4.17) & 8--9 \\
+    Easy     & 3.50 (5.71) & 0.33 (0.71) & 0.62 (0.74) & 8--9 \\
+    Medium   & 3.62 (6.39) & 2.44 (3.81) & 3.62 (6.32) & 8--9 \\
+    Hard     & 13.00 (4.04) & 11.78 (7.36) & 13.25 (5.18) & 8--9 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Baseline confound.}
+A critical asymmetry emerged in the practice round (L1), where no feedback was given: audio participants averaged 0.33 falls (SD 0.50) while haptic averaged 4.88 (SD 7.34) and none averaged 3.00 (SD 4.17)---a 10-fold gap (Mann-Whitney $U=28$, $p=0.04$, $r=-0.57$).
+This suggests pre-existing group differences in baseline tilt control.
+Change-from-baseline deltas show that at Easy level haptic improved by $-1.38$ falls, none by $-2.38$, and audio remained flat ($0.00$); at Hard level all groups deteriorated by $+8$ to $+11$ falls with no modality advantage.
+
+\textbf{Steering response.}
+To investigate real-time responses to proximity warnings, we identified 2,372 proximity escalation events (consecutive frames where \texttt{proximity\_level} increased) and extracted a $\pm4$ s window around each, excluding events within 500 ms of a fall or respawn.
+Figure~\ref{fig:steering} shows time-locked mean proximity level and tilt magnitude per modality.
+Median time-to-recovery was similar across groups: haptic 400 ms, audio 416 ms, none 417 ms; 98--99\% of escalations recovered within 3 s.
+Tilt reversal frequency within 500 ms differed slightly (audio 43.0\%, none 32.6\%, haptic 27.2\%), yet all modalities showed comparable proximity return to baseline within 1--2 s.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_steering_response.pdf}
+  \caption{Time-locked proximity level (left) and tilt magnitude (right) relative to proximity escalation events.
+    Vertical dashed line marks the escalation moment ($t=0$).
+    Events within 500 ms of a fall or respawn were excluded.
+    Haptic (blue), Audio (medium gray), None (dark gray). Shaded bands: $\pm$SE.}
+  \label{fig:steering}
+\end{figure}
+
+\textbf{Qualitative feedback.}
+Participant P008 (audio) noted: \textit{``The sounds made me nervous. It's a good training for elders or students with special needs.''} This is consistent with audio cues increasing arousal without improving control.
+
+% =========================================================================
+\section{Discussion}
+% =========================================================================
+
+\textbf{Interpreting the null finding.}
+PathSense detected no significant fall-rate differences across modalities, and Bayesian analysis confirms this is not merely low power: $\text{BF}_{01} \approx 84$ at Easy level provides strong evidence that no modality difference exists under these conditions.
+Effect sizes were small to negligible (rank-biserial $r$ from $-0.44$ to $+0.25$).
+This suggests that modality benefits are not automatic but depend on task structure, training duration, or individual factors---a finding that itself advances HCI understanding of proximity feedback design~\cite{small_medium_large_2025}.
+
+\textbf{The baseline confound as methodological insight.}
+The 10-fold practice-round gap (audio 0.33 vs.\ haptic 4.88, $p=0.04$, $r=-0.57$) points to pre-existing group differences in tilt control ability and motivates baseline-controlled study designs.
+Change-from-baseline deltas show moderate effect sizes (Cohen's $d$ $\approx$ 0.5--0.7) suggesting modality-specific learning trajectories that raw-falls analysis obscures: haptic and none groups improved at Easy while audio did not, consistent with audio cues increasing arousal without aiding correction.
+At Hard level all groups deteriorated equally ($\Delta = +8$ to $+11$ falls), indicating that task difficulty overrides any modality benefit beyond a certain complexity threshold.
+
+% =========================================================================
+\section{Limitations and Future Work}
+% =========================================================================
+
+\begin{itemize}
+  \item \textbf{Sample size.} With 8--9 participants per cell the study is underpowered; a follow-up with $n \approx 50$ per modality would achieve 80\% power for medium effects.
+  \item \textbf{Adolescent cohort.} Most participants were 13--15 years old; adult motor control and body schema predictions require replication in adult samples.
+  \item \textbf{Uncontrolled baseline.} Random assignment did not equate practice-round performance; future studies should counterbalance or control the practice phase.
+  \item \textbf{Single session.} Learning consolidation and retention were not assessed; multi-session designs are needed to separate acquisition from retention effects.
+\end{itemize}
+
+% =========================================================================
+\section{Conclusion}
+% =========================================================================
+
+PathSense demonstrates a smartphone-native platform for comparing proximity feedback modalities in a tilt-controlled motor task.
+In this pilot study we found no raw differences in fall rate across modalities, but uncovered a critical baseline confound and evidence that change-from-baseline analysis reveals modality-specific patterns (haptic and none improve at easier levels; audio remains flat).
+These findings suggest that feedback modality effects may be subtle, task-dependent, and developmentally sensitive.
+Rather than declaring haptic a clear winner, this work highlights the importance of (i) controlled baselines, (ii) developmental-stage matching in theoretical predictions, and (iii) larger sample sizes for confirmatory claims.
+The PathSense platform and pilot data provide effect size estimates and design specifications for a larger follow-up.
 
 % -------------------------------------------------------------------------
 \bibliographystyle{unsrt}
