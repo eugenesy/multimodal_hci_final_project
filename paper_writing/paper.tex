@@ -71,11 +71,11 @@ We discuss implications for modality design in motor augmentation and provide ef
 
 \begin{teaserfigure}
   \centering
-  \includegraphics[height=5cm]{figure.png}
-  \hfill
-  \includegraphics[height=5cm]{images/pathsense_setup.jpeg}
-  \caption{Left: the three between-subjects feedback conditions in PathSense (rendered) — Group A (no feedback), Group B (audio), Group C (haptic). All groups use the same tilt control; only the feedback modality differs. Right: a participant performing the study, holding the phone with the non-dominant hand and tilting to keep the ball on-path; the laptop displays the game in real time.}
-  \Description{Left: three-column rendered diagram of PathSense conditions. Right: photo of a participant during the study, holding a smartphone in the non-dominant hand.}
+  \includegraphics[width=\linewidth]{figure.png}
+  \caption{The three between-subjects feedback conditions in PathSense.
+    All groups use the same tilt control; the only difference is the feedback modality.}
+  \Description{Three-column figure showing the PathSense study conditions:
+    Group A (no feedback), Group B (sound feedback), Group C (haptic feedback).}
   \label{fig:teaser}
 \end{teaserfigure}
 
@@ -137,6 +137,13 @@ After each round, participants completed a brief post-round survey.
     \bottomrule
   \end{tabular}
 \end{table}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\linewidth]{images/pathsense_setup.jpeg}
+  \caption{Study setup: participant holds the phone with the non-dominant hand and tilts to keep the ball on-path. The laptop displays the game in real time; the tablet shows the admin panel.}
+  \label{fig:setup}
+\end{figure}
 
 \textbf{Data Collection and Analysis.}
 Game data were logged to an SQLite database via a Node.js server; trajectory data were recorded at 10 Hz (ball position, proximity level, gamma/beta tilt angles).
