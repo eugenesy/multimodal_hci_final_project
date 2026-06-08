@@ -15,7 +15,7 @@
   \providecommand\BibTeX{{Bib\TeX}}}
 
 %% ---- Conference / rights placeholders (fill in after rights form) ----
-\setcopyright{acmlicensed}
+\setcopyright{none}
 \copyrightyear{2026}
 \acmYear{2026}
 \acmDOI{XXXXXXX.XXXXXXX}
@@ -85,7 +85,7 @@ We discuss implications for modality design in motor augmentation and provide ef
 \section{Introduction}
 % =========================================================================
 
-Tilt-based interfaces require real precision from the non-dominant hand---the limb we typically rely on less, yet one that already leans heavily on peripheral proprioceptive feedback rather than fine cortical resolution~\cite{position_adamo_2009}.
+Tilt-based interfaces require real precision from the non-dominant hand, the limb we typically rely on less, yet one that already leans heavily on peripheral proprioceptive feedback rather than fine cortical resolution~\cite{position_adamo_2009}.
 When we actively use a tool, the brain extends its spatial self-model to encompass it~\cite{tools_maravita_2004}; if the held phone is already encoded as a bodily extension, proximity warnings delivered \emph{through} it may update the user's spatial model more directly than warnings on a separate channel.
 Whether feedback \emph{modality} shapes that benefit is less clear: haptic cues act on the same sensorimotor channel as the task, while audio cues are processed on a separate channel and require deliberate signal-to-correction mapping~\cite{augmented_sigrist_2013}.
 Existing evidence comes from lab-grade rehabilitation rigs~\cite{robotassisted_cuppone_2016}; whether smartphone-delivered proximity feedback produces comparable effects in a non-dominant hand tilt task remains untested.
@@ -179,7 +179,7 @@ A winsorised sensitivity analysis (95th percentile per cell) reproduced the same
 \end{table}
 
 \textbf{Baseline confound.}
-A critical asymmetry emerged in the practice round (L1), where no feedback was given: audio participants averaged 0.33 falls (SD 0.50) while haptic averaged 4.88 (SD 7.34) and none averaged 3.00 (SD 4.17)---a 10-fold gap (Mann-Whitney $U=28$, $p=0.04$, $r=-0.57$).
+A critical asymmetry emerged in the practice round (L1), where no feedback was given: audio participants averaged 0.33 falls (SD 0.50) while haptic averaged 4.88 (SD 7.34) and none averaged 3.00 (SD 4.17), representing a 10-fold gap (Mann-Whitney $U=28$, $p=0.04$, $r=-0.57$).
 This suggests pre-existing group differences in baseline tilt control.
 Change-from-baseline deltas show that at Easy level haptic improved by $-1.38$ falls, none by $-2.38$, and audio remained flat ($0.00$); at Hard level all groups deteriorated by $+8$ to $+11$ falls with no modality advantage.
 
@@ -209,7 +209,7 @@ Participant P008 (audio) noted: \textit{``The sounds made me nervous. It's a goo
 \textbf{Interpreting the null finding.}
 PathSense detected no significant fall-rate differences across modalities, and Bayesian analysis confirms this is not merely low power: $\text{BF}_{01} \approx 84$ at Easy level provides strong evidence that no modality difference exists under these conditions.
 Effect sizes were small to negligible (rank-biserial $r$ from $-0.44$ to $+0.25$).
-This suggests that modality benefits are not automatic but depend on task structure, training duration, or individual factors---a finding that itself advances HCI understanding of proximity feedback design~\cite{small_medium_large_2025}.
+This suggests that modality benefits are not automatic but depend on task structure, training duration, or individual factors. In itself, this advances HCI understanding of proximity feedback design~\cite{small_medium_large_2025}.
 
 \textbf{The baseline confound as methodological insight.}
 The 10-fold practice-round gap (audio 0.33 vs.\ haptic 4.88, $p=0.04$, $r=-0.57$) points to pre-existing group differences in tilt control ability and motivates baseline-controlled study designs.
