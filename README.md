@@ -26,14 +26,12 @@ All coursework for MMHCI in one place: three miniprojects, a set of weekly exerc
 
 ## Demos (hosted externally)
 
-A few videos are too large to commit to git and are hosted on YouTube instead:
+Demo recordings are too large to commit to git and are hosted on YouTube instead:
 
 | File | Project | Link |
 |---|---|---|
 | `demo.mp4` (512 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
 | `demo.mp4` (103 MB) | Week 9 haptic study | _TODO: add link_ |
-| `data/rain.mp4` (65 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
-| `data/skydiv.mp4` (65 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
 
 ## Notes on shared assets
 

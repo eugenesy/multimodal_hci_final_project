@@ -30,11 +30,11 @@ data/
   crab.mp4                     # Crawling Crabs video (bundled)
 ```
 
-`rain.mp4` and `skydiv.mp4` (the other two videos) and the full demo recording are not committed here due to size — see the root README's Demos section for hosted links.
+`rain.mp4` and `skydiv.mp4` (the other two videos) aren't included in this repo — supply your own video assets under those names in `data/` if you want all three experiences playable. The full demo recording is hosted separately — see the root README's Demos section.
 
 ## How to Run
 
 1. Wire the MeArm to the Arduino (base=pin 9, shoulder=7, elbow=8, claw=6) and flash `Arduino_IK_serial.ino`.
 2. Open `miniproject_3.pde` in Processing, update `portName` to your Arduino's serial port, and click Run.
-3. Add `rain.mp4` / `skydiv.mp4` to `data/` (or substitute your own) if you want all three experiences playable.
+3. Add `rain.mp4` / `skydiv.mp4` to `data/` if you want all three experiences playable.
 4. Press `1`, `2`, or `3` (or click a button) to start an experience; press `SPACE` to return to the menu.
