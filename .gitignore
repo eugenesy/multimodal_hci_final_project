@@ -12,8 +12,6 @@ venv/
 miniproject-1-sonic-lockpicker/model/*
 !miniproject-1-sonic-lockpicker/model/README
 
-# Large demo/stimulus videos hosted externally — see root README's Demos section
-miniproject-3-tactile-theater/data/rain.mp4
-miniproject-3-tactile-theater/data/skydiv.mp4
+# Large demo recordings hosted externally — see root README's Demos section
 miniproject-3-tactile-theater/demo.mp4
 week9-haptic-mearm/demo.mp4

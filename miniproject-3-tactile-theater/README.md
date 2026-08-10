@@ -27,14 +27,15 @@ miniproject_3.pde              # Processing sketch: menu + video playback + chor
 Arduino_IK_serial/
   Arduino_IK_serial.ino        # Arduino sketch driving the MeArm
 data/
-  crab.mp4                     # Crawling Crabs video (bundled)
+  crab.mp4                     # Crawling Crabs video
+  rain.mp4                     # Rain video
+  skydiv.mp4                   # Sky Diving video
 ```
 
-`rain.mp4` and `skydiv.mp4` (the other two videos) aren't included in this repo — supply your own video assets under those names in `data/` if you want all three experiences playable. The full demo recording is hosted separately — see the root README's Demos section.
+The full demo recording (`demo.mp4`) is too large for GitHub (512 MB) and is hosted separately — see the root README's Demos section.
 
 ## How to Run
 
 1. Wire the MeArm to the Arduino (base=pin 9, shoulder=7, elbow=8, claw=6) and flash `Arduino_IK_serial.ino`.
 2. Open `miniproject_3.pde` in Processing, update `portName` to your Arduino's serial port, and click Run.
-3. Add `rain.mp4` / `skydiv.mp4` to `data/` if you want all three experiences playable.
-4. Press `1`, `2`, or `3` (or click a button) to start an experience; press `SPACE` to return to the menu.
+3. Press `1`, `2`, or `3` (or click a button) to start an experience; press `SPACE` to return to the menu.
