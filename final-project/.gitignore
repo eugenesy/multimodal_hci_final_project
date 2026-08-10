@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# SSL certificates (never commit private keys)
+*.pem
+key.pem
+cert.pem
+
+# Participant data (privacy)
+data/
+*.db
+*.jsonl
+*.csv
+
+# macOS
+.DS_Store
+paper_writing/.DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.out
+*.log
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Superpowers / local tooling
+.superpowers/
+
+# Analysis documents generated in prior session
+ANALYSIS_SUMMARY.md
+BIBLIOGRAPHY_INFO.md
+IMPROVEMENTS_CHECKLIST.md
+RESEARCH_SOURCES.md

@@ -1,0 +1,6 @@
+Actual/Guessed,Beat,Bomb,Rain,Wand,Yo-Yo
+Beat,3,0,0,0,0
+Bomb,0,2,1,0,0
+Rain,0,0,3,0,0
+Wand,0,0,0,3,0
+Yo-Yo,0,0,0,0,3

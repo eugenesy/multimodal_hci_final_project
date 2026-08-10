@@ -1,94 +1,41 @@
-# PathSense
+# Multimodal Human-Computer Interaction (MMHCI) Coursework
 
-**A smartphone-native tightrope balance game for proximity-feedback research.**
+**Course:** Multimodal Human-Computer Interaction — CSIE7641, National Taiwan University (NTU), Spring 2026 (114-2)
+**Author:** Eugene Lalis Sy
 
-Participants hold an Android phone with their non-dominant hand and tilt it to keep a ball on a narrow path. Three between-subjects groups receive different proximity feedback modalities (haptic, audio, none) as the ball approaches the path edge. Falls are the primary outcome measure.
+All coursework for MMHCI in one place: three miniprojects, a set of weekly exercises, and the final project. Each folder is self-contained with its own README, dependencies, and run instructions.
 
-Built for a Multimodal HCI course final project at NTU × Academia Sinica, 2026.
+## Final Project
 
----
+| Project | Description |
+|---|---|
+| [`final-project/`](final-project/) | **PathSense** — a smartphone tilt-control balance game comparing haptic, audio, and no-feedback proximity cues across 25 participants. |
 
-## Study Summary
+## Weekly Exercises & Miniprojects (chronological)
 
-- **25 participants**, ages 13–18, non-dominant hand only
-- **3 modalities**: haptic vibration, audio tones, no feedback
-- **4 difficulty levels**: Practice → Easy → Medium → Hard
-- **Key finding**: No significant modality effect (Kruskal-Wallis p > 0.19; BF₀₁ ≈ 84 at Easy level), but a 10× baseline gap between groups reveals individual differences matter more than modality choice
+| Week / Project | Description |
+|---|---|
+| [`week2-jnd/`](week2-jnd/) | Auditory just-noticeable-difference studies: panning, volume, waveform |
+| [`week3-speech-recognition/`](week3-speech-recognition/) | Offline speech-to-text (Vosk + OSC) and macOS text-to-speech in Processing |
+| [`miniproject-1-sonic-lockpicker/`](miniproject-1-sonic-lockpicker/) | **Sonic Lockpicker** — an audio-only, eyes-free Wordle-style lockpicking game using spatial audio and voice input |
+| [`week5-fitts-law-gaze/`](week5-fitts-law-gaze/) | Head-controlled mouse (MediaPipe gaze tracking) + Fitts's Law pointing experiment |
+| [`week6-gaze-tampermonkey/`](week6-gaze-tampermonkey/) | Webcam gaze tracking; Tampermonkey userscripts that hack live Google Search UI |
+| [`miniproject-2-tiktok-face-interface/`](miniproject-2-tiktok-face-interface/) | **TikTok Face Interface Hack** — gaze/expression-driven navigation of the TikTok desktop feed |
+| [`week9-haptic-mearm/`](week9-haptic-mearm/) | Haptic emoji recognition study using a MeArm robotic arm |
+| [`miniproject-3-tactile-theater/`](miniproject-3-tactile-theater/) | **Tactile Theater** — ambient video paired with synchronized MeArm haptic choreography |
 
-Full results in [`paper_writing/paper.pdf`](paper_writing/paper.pdf).
+## Demos (hosted externally)
 
----
+A few videos are too large to commit to git and are hosted on YouTube instead:
 
-## Tech Stack
+| File | Project | Link |
+|---|---|---|
+| `demo.mp4` (512 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
+| `demo.mp4` (103 MB) | Week 9 haptic study | _TODO: add link_ |
+| `data/rain.mp4` (65 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
+| `data/skydiv.mp4` (65 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
 
-| Layer | Technology |
-|-------|-----------|
-| Game engine | [Phaser 3](https://phaser.io/) |
-| Server | Node.js + Socket.IO |
-| Transport | HTTPS (self-signed cert for gyroscope access) |
-| Gyroscope | GyroNorm.js |
-| Database | SQLite via better-sqlite3 |
-| Analysis | Python (pandas, scipy, matplotlib) |
-| Paper | LaTeX / ACM sigconf (tectonic) |
+## Notes on shared assets
 
----
-
-## How to Run
-
-### Prerequisites
-- Node.js v18+
-- OpenSSL (for HTTPS certificate)
-
-### Setup
-
-```bash
-npm install
-
-# Generate HTTPS cert (required for gyroscope on phones)
-openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes \
-  -subj "/CN=localhost"
-
-node server.js
-```
-
-Three URLs are printed on boot:
-- `https://localhost:3000/` — Game display (external monitor)
-- `https://localhost:3000/admin` — Researcher admin panel
-- `https://<ip>:3000/controller` — Player phone (shown as QR on admin panel)
-
-To trust the cert on phones: open `https://<ip>:3000/cert` and install it.
-
----
-
-## Repository Structure
-
-```
-.
-├── server.js               # Node.js game server (Socket.IO, SQLite)
-├── public/
-│   ├── index.html          # Game display
-│   ├── admin.html          # Researcher panel
-│   ├── controller.html     # Phone controller
-│   └── js/
-│       ├── game.js         # Phaser 3 MarbleScene
-│       ├── display.js      # Display socket client
-│       ├── admin.js        # Admin socket client
-│       └── controller.js   # Phone gyroscope + feedback
-├── paper_writing/
-│   ├── paper.tex           # Final paper (ACM sigconf)
-│   ├── paper.pdf           # Compiled PDF
-│   ├── presentation.tex    # Beamer slides
-│   ├── analysis.py         # Statistical analysis script
-│   ├── mhci.bib            # Bibliography
-│   └── images/             # Figures and photos
-├── CLAUDE.md               # Architecture and dev notes
-└── RESEARCH.md             # Study design and hypotheses
-```
-
----
-
-## Paper
-
-The final paper is [`paper_writing/paper.pdf`](paper_writing/paper.pdf) (4 pages, ACM sigconf format).
-
-Key sections: PathSense platform description, between-subjects study design, Kruskal-Wallis and Mann-Whitney results with Bayes factors, time-locked steering response analysis.
+- The **Vosk** offline speech-recognition model used by `miniproject-1-sonic-lockpicker` and `week3-speech-recognition` isn't committed (large binary, third-party). Download a [Vosk English model](https://alphacephei.com/vosk/models) and extract it into that project's `model/` folder.
+- Several exercises share MediaPipe's `face_landmarker.task` model, committed directly per-project since it's small (~4 MB each).

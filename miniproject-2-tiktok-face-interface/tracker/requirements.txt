@@ -1,0 +1,6 @@
+mediapipe==0.10.32
+opencv-python
+numpy
+scikit-learn
+filterpy
+websockets

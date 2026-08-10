@@ -1,36 +1,19 @@
-# Dependencies
-node_modules/
-
-# SSL certificates (never commit private keys)
-*.pem
-key.pem
-cert.pem
-
-# Participant data (privacy)
-data/
-*.db
-*.jsonl
-*.csv
-
 # macOS
 .DS_Store
-paper_writing/.DS_Store
 
-# LaTeX build artifacts
-*.aux
-*.bbl
-*.blg
-*.out
-*.log
-*.fls
-*.fdb_latexmk
-*.synctex.gz
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
 
-# Superpowers / local tooling
-.superpowers/
+# Vosk speech-recognition model binaries (download separately — see
+# miniproject-1-sonic-lockpicker/README.md and week3-speech-recognition/README.md)
+miniproject-1-sonic-lockpicker/model/*
+!miniproject-1-sonic-lockpicker/model/README
 
-# Analysis documents generated in prior session
-ANALYSIS_SUMMARY.md
-BIBLIOGRAPHY_INFO.md
-IMPROVEMENTS_CHECKLIST.md
-RESEARCH_SOURCES.md
+# Large demo/stimulus videos hosted externally — see root README's Demos section
+miniproject-3-tactile-theater/data/rain.mp4
+miniproject-3-tactile-theater/data/skydiv.mp4
+miniproject-3-tactile-theater/demo.mp4
+week9-haptic-mearm/demo.mp4

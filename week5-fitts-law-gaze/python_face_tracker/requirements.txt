@@ -1,0 +1,8 @@
+mediapipe==0.10.32
+opencv-python
+pyautogui
+numpy
+pygame
+pandas
+matplotlib
+scipy
