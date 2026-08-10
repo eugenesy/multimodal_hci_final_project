@@ -82,7 +82,8 @@ To trust the cert on phones: open `https://<ip>:3000/cert` and install it.
 │   ├── mhci.bib            # Bibliography
 │   └── images/             # Figures and photos
 ├── CLAUDE.md               # Architecture and dev notes
-└── RESEARCH.md             # Study design and hypotheses
+├── RESEARCH.md             # Study design and hypotheses
+└── proposal_presentation.mov  # Early study proposal presentation
 ```
 
 ---
@@ -92,3 +93,7 @@ To trust the cert on phones: open `https://<ip>:3000/cert` and install it.
 The final paper is [`paper_writing/paper.pdf`](paper_writing/paper.pdf) (4 pages, ACM sigconf format).
 
 Key sections: PathSense platform description, between-subjects study design, Kruskal-Wallis and Mann-Whitney results with Bayes factors, time-locked steering response analysis.
+
+## Proposal
+
+[`proposal_presentation.mov`](proposal_presentation.mov) is the original study proposal presentation, recorded before data collection.
