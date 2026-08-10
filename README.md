@@ -30,8 +30,8 @@ Demo recordings are too large to commit to git and are hosted on YouTube instead
 
 | File | Project | Link |
 |---|---|---|
-| `demo.mp4` (512 MB) | Tactile Theater (Miniproject 3) | _TODO: add link_ |
-| `demo.mp4` (103 MB) | Week 9 haptic study | _TODO: add link_ |
+| `demo.mp4` (512 MB) | Tactile Theater (Miniproject 3) | [youtu.be/RsMvON0JasU](https://youtu.be/RsMvON0JasU) |
+| `demo.mp4` (103 MB) | Week 9 haptic study | [youtu.be/emGfSW0cv98](https://youtu.be/emGfSW0cv98) |
 
 ## Notes on shared assets
 

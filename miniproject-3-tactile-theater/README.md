@@ -32,7 +32,7 @@ data/
   skydiv.mp4                   # Sky Diving video
 ```
 
-The full demo recording (`demo.mp4`) is too large for GitHub (512 MB) and is hosted separately — see the root README's Demos section.
+The full demo recording (`demo.mp4`, 512 MB) is too large for GitHub and is hosted on YouTube instead: [youtu.be/RsMvON0JasU](https://youtu.be/RsMvON0JasU).
 
 ## How to Run
 

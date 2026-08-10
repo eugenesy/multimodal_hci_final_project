@@ -17,5 +17,7 @@ A perceptual study measuring how well participants can distinguish five distinct
 
 `Participant_1_confusion_matrix.csv` and `Participant_2_confusion_matrix.csv` are the two collected pilot runs.
 
+A demo recording is on YouTube: [youtu.be/emGfSW0cv98](https://youtu.be/emGfSW0cv98).
+
 ## How to Run
 Wire the MeArm (base=pin 9, shoulder=7, elbow=8, claw=6), flash `Arduino_IK_serial.ino` from the Miniproject 3 folder, update `portName` in `Processing_mearm_serial.pde`, then run it in Processing. Press `T` for training, `S` to start the study.
